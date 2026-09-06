@@ -1,6 +1,6 @@
 # Current Project State
 
-Last updated: 2026-09-03
+Last updated: 2026-09-06
 
 ## Current Objective
 
@@ -166,9 +166,32 @@ migration faz backfill antes de remover a coluna.
 
 ## Next Action
 
-Testar no painel a configuracao de edificios permitidos por turma, incluindo
-CPAEI em Sede/SMT. Depois tratar `SOT-001` e `SOT-003`, seguido de
-`SOT-002`/`SOT-005`.
+### Security priorities for next session
+
+1. Preparar patches sem mudanca major: Laravel 12.69.1, Filament 3.3.55 e
+   plugin de permissoes 2.3.3, com revisao do lockfile e testes focados.
+2. Decidir e preparar a remocao das dependencias sem uso confirmado, sem
+   misturar esta limpeza com upgrades major.
+3. Definir auditorias automaticas de `composer audit --locked` e `npm audit`,
+   com resposta urgente a RCEs e vulnerabilidades no catalogo CISA KEV.
+4. Rever o hardening do novo servidor: PHP-FPM sem escrita no codigo, escrita
+   apenas em `storage/` e `bootstrap/cache/`, PHP apenas por `public/index.php`,
+   sem execucao em `public/storage`, SSH por chave, root remoto desativado,
+   firewall, Fail2ban, updates de seguranca e monitorizacao de cron/systemd/
+   Supervisor/`authorized_keys`.
+5. Preparar PHP 8.5 em staging; deixar Filament 5, Livewire 4 e Laravel 13 para
+   uma migracao posterior e faseada, com testes de permissoes, MFA,
+   impersonation e importadores.
+
+Contexto do incidente: o servidor anterior foi eliminado; o servidor e a
+instalacao atuais sao novos e usam credenciais novas. Nao ha evidencia forense
+remanescente. Livewire 3.6.3, presente historicamente ate 2026-08-19, e uma
+hipotese plausivel devido ao CVE-2025-54068 (RCE sem autenticacao), mas nao pode
+ser confirmado como causa.
+
+Depois destas prioridades, testar no painel a configuracao de edificios
+permitidos por turma, incluindo CPAEI em Sede/SMT. Tratar `SOT-001` e
+`SOT-003`, seguido de `SOT-002`/`SOT-005`.
 
 ## Important Constraints
 

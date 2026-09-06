@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 76" role="img" aria-labelledby="title desc">
+  <title id="title">MAESTRO</title><desc id="desc">Plataforma Integrada de Gestão do Conservatório</desc>
+  <path fill="#063B82" d="M8 62V14h10l14 25 14-25h10v48H45V33L34 53h-4L19 33v29H8Z"/>
+  <path fill="#FFBF00" d="M68 14h12l17 48H85l-3-10H65l-3 10H50l18-48Zm0 29h11l-5-17-6 17Z"/>
+  <text x="108" y="42" fill="#063B82" font-family="Georgia, serif" font-size="34" font-weight="700" letter-spacing="3">MAESTRO</text>
+  <text x="110" y="61" fill="#64748B" font-family="Arial, sans-serif" font-size="8" letter-spacing=".5">PLATAFORMA INTEGRADA DE GESTÃO DO CONSERVATÓRIO</text>
+</svg>
