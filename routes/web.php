@@ -60,19 +60,6 @@ Route::middleware([EnforceMfa::class, EnforceReadOnlyImpersonation::class])->gro
         Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
     });
 
-  Route::get('/debug-proxy', function (Request $request) {
-    return response()->json([
-        'scheme' => $request->getScheme(),
-        'secure' => $request->isSecure(),
-        'host' => $request->getHost(),
-        'url' => $request->url(),
-        'asset' => asset('css/maestro.css'),
-        'app_url' => config('app.url'),
-        'forwarded_proto' => $request->header('X-Forwarded-Proto'),
-        'remote_addr' => $request->server('REMOTE_ADDR'),
-    ]);
-});
-
 
 });
 
