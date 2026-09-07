@@ -134,7 +134,7 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Recursos'),
                 NavigationGroup::make()
                     ->label('Administração')
-                    ->collapsible(false),
+                    ->collapsible(),
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('5s');
