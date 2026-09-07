@@ -123,4 +123,11 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'trusted_proxies' => array_filter(
+    array_map(
+        'trim',
+        explode(',', env('TRUSTED_PROXIES', ''))
+    )
+),
+
 ];
