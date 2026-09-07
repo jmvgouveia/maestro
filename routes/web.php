@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Lab404\Impersonate\Services\ImpersonateManager;
+use Illuminate\Http\Request;
+
 
 Route::get('/', function () {
     return redirect('/maestro');
@@ -57,6 +59,19 @@ Route::middleware([EnforceMfa::class, EnforceReadOnlyImpersonation::class])->gro
         Route::get('settings/password', Password::class)->name('settings.password');
         Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
     });
+
+    Route::get('/debug-proxy', function (Request $request) {
+    return response()->json([
+        'scheme' => $request->getScheme(),
+        'secure' => $request->isSecure(),
+        'host' => $request->getHost(),
+        'url' => $request->url(),
+        'forwarded_proto' => $request->header('X-Forwarded-Proto'),
+        'remote_addr' => $request->server('REMOTE_ADDR'),
+    ]);
+});
+
+
 });
 
 require __DIR__.'/auth.php';
