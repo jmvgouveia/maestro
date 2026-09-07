@@ -67,8 +67,11 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarWidth('18rem')
             ->favicon(asset('images/maestro-symbol.svg'))
             ->assets([
-                Css::make('maestro', asset('css/maestro.css') . '?v=' . filemtime(public_path('css/maestro.css'))),
-                Js::make('maestro-charts', asset('js/maestro-charts.js')),
+               Css::make(
+    'maestro',
+    '/css/maestro.css?v=' . filemtime(public_path('css/maestro.css'))
+),
+               Js::make('maestro-charts', '/js/maestro-charts.js'),
             ])
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
@@ -116,8 +119,8 @@ class AdminPanelProvider extends PanelProvider
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->sidebarFullyCollapsibleOnDesktop()
             ->brandName('MAESTRO')
-            ->brandLogo(asset('images/maestro-logo-light.svg'))
-            ->darkModeBrandLogo(asset('images/maestro-logo-dark.svg'))
+            ->brandLogo('/images/maestro-logo-light.svg')
+            ->darkModeBrandLogo('/images/maestro-logo-dark.svg')
             ->brandLogoHeight(fn (): string => request()->is('maestro/login') ? '10rem' : '2.625rem')
             ->navigationGroups([
                 NavigationGroup::make()
