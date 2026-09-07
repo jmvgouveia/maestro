@@ -12,21 +12,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-    if ($trustedProxies = config('app.trusted_proxies')) {
         $middleware->trustProxies(
-            at: $trustedProxies,
+            at: ['10.60.5.6'],
             headers: Request::HEADER_X_FORWARDED_FOR
                 | Request::HEADER_X_FORWARDED_HOST
                 | Request::HEADER_X_FORWARDED_PORT
                 | Request::HEADER_X_FORWARDED_PROTO,
         );
-    }
 
-    $middleware->prependToPriorityList(
-        \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
-        \App\Http\Middleware\EnforceMfa::class,
-    );
-})
+        $middleware->prependToPriorityList(
+            \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            \App\Http\Middleware\EnforceMfa::class,
+        );
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })
