@@ -63,6 +63,33 @@ Consequences:
 
 ---
 
+### DEC-002 — Adiar correção do recálculo de carga horária
+
+Date: 2026-09-07
+
+Status: Active
+
+Decision:
+
+Para o primeiro período de utilização em produção, manter a lógica atual de
+recálculo da carga horária e adiar a revisão de `Teacher::updateHourCounterFromReductions()`.
+
+Reason:
+
+Todos os professores usam a carga base padrão de 22 horas letivas e 4 horas
+não letivas. A alteração estrutural do recálculo não é crítica para a primeira
+entrada de dados e será reavaliada após existir histórico real de utilização.
+
+Consequences:
+
+- Não alterar agora o fluxo de edição de professores.
+- Manter para revisão a filtragem por ano letivo das reduções.
+- Manter para revisão o recálculo da componente não letiva, total e horários já aprovados.
+- Rever também o comportamento de `EditTeacher`, que atualmente reatribui cargos
+  e reduções ao ano letivo ativo.
+
+---
+
 ---
 
 ## Superseded Decisions

@@ -9,8 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 trait HourCounter {
 
-    protected function hoursCounterUpdate(Schedule $schedule, Bool $plusOrMinus): void
+    protected function hoursCounterUpdate(?Schedule $schedule, Bool $plusOrMinus): void
     {
+        if (! $schedule) {
+            return;
+        }
+
         try {
             DB::transaction(function () use ($schedule) {
                 $counter = TeacherHourCounter::where('id_teacher', $schedule->id_teacher)

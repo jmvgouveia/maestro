@@ -101,10 +101,21 @@ trait HandlesScheduleSwap
                     403,
                 );
 
+                $roomId = (int) ($formState['id_room'] ?? 0);
+                $weekdayId = (int) ($formState['id_weekday'] ?? 0);
+                $timePeriodId = (int) ($formState['id_timeperiod'] ?? 0);
+
+                abort_unless($roomId && $weekdayId && $timePeriodId, 422);
+
                 $conflictingSchedule = Schedule::query()
-                    ->whereKey($this->conflictingSchedule?->getKey())
+                    ->where('id_room', $roomId)
+                    ->where('id_weekday', $weekdayId)
+                    ->where('id_timeperiod', $timePeriodId)
                     ->where('id_schoolyear', $activeYear->id)
+                    ->where('id_teacher', '!=', $teacher->id)
                     ->whereIn('status', ['Aprovado', 'Pendente'])
+                    ->orderBy('created_at')
+                    ->orderBy('id')
                     ->lockForUpdate()
                     ->first();
 
@@ -121,17 +132,6 @@ trait HandlesScheduleSwap
                     ->where('id_subject', $formState['id_subject'] ?? null)
                     ->where('id_schoolyear', $activeYear->id)
                     ->exists(), 403);
-
-                // ✅ 1. Obter o último horário ocupado no mesmo dia/período
-                $ultimoHorario = Schedule::where('id_weekday', $this->conflictingSchedule->id_weekday)
-                    ->where('id_timeperiod', $this->conflictingSchedule->id_timeperiod)
-                    ->whereIn('status', ['Aprovado', 'Pendente'])
-                    ->latest('updated_at')
-                    ->first();
-
-                if (! $ultimoHorario) {
-                    throw new \Exception('Não foi encontrado horário válido para este slot.');
-                }
 
                 // ✅ 2. Criar o novo Schedule pendente
                 $schedule = Schedule::create([
@@ -150,10 +150,10 @@ trait HandlesScheduleSwap
 
                 // ✅ 4. Criar o pedido de troca encadeado
                 $scheduleRequest = ScheduleRequest::create([
-                    'id_schedule' => $ultimoHorario->id, // ← encadeado corretamente
-                    'id_teacher' => $ultimoHorario->id_teacher,
+                    'id_schedule' => $conflictingSchedule->id,
+                    'id_teacher' => $conflictingSchedule->id_teacher,
                     'id_teacher_requester' => $teacher?->id,
-                    'id_schoolyear' => $ultimoHorario->id_schoolyear,
+                    'id_schoolyear' => $conflictingSchedule->id_schoolyear,
                     'id_new_schedule' => $schedule->id,
                     'justification' => $data['justification'] ?? 'Conflito detetado automaticamente.',
                     'status' => 'Pendente',

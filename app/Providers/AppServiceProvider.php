@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Listeners\RevokeSessionsAfterPasswordReset;
 use App\Models\CourseSubject;
+use App\Models\EmailAudit;
 use App\Models\Registration;
 use App\Models\TeacherSubject;
 use App\Models\User;
+use App\Policies\EmailAuditPolicy;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -58,6 +60,8 @@ class AppServiceProvider extends ServiceProvider
         // Políticas de permissões de utilizadores e Super Admin
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(Permission::class, PermissionPolicy::class);
+        Gate::policy(EmailAudit::class, EmailAuditPolicy::class);
+
         Gate::before(function (User $user, string $ability, array $arguments = []) {
             $record = $arguments[0] ?? null;
             $isSchoolYearRecord = $record instanceof Registration

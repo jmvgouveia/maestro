@@ -46,6 +46,43 @@ Checkpoint:
 
 ## Sessions
 
+### 2026-09-07
+
+Worked on:
+
+- Revisão de produção do fluxo de pedidos de troca e carga horária.
+
+Changed:
+
+- Corrigida a seleção da primeira marcação do slot por ano letivo, sala, dia,
+  período, `created_at` e `id`.
+- Reforçada a validação server-side do conflito no fluxo de criação.
+- Protegido o contador contra relações `Schedule` nulas.
+- Corrigido o importador de contadores para a carga padrão 22/4/26 e ano ativo.
+
+Discovered:
+
+- O recálculo ao editar um professor mistura potencialmente anos letivos,
+  atualiza apenas a componente letiva e pode reescrever cargos/reduções
+  históricos.
+
+Validated:
+
+- `git diff --check` passou.
+- Testes PHP não executados neste ambiente porque o comando `php` não está instalado.
+
+Remaining:
+
+- Rever `Teacher::updateHourCounterFromReductions()` e `EditTeacher` após o
+  primeiro período de utilização em produção, conforme `DEC-002`.
+- Confirmar novo envio após remover o registo duplicado dos listeners de email.
+
+Checkpoint:
+
+- `current-state.md` atualizado.
+
+---
+
 ### 2026-09-03
 
 Worked on:

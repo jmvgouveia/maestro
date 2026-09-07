@@ -1,6 +1,6 @@
 # Current Project State
 
-Last updated: 2026-09-06
+Last updated: 2026-09-07
 
 ## Current Objective
 
@@ -9,11 +9,18 @@ ordem de risco.
 
 ## Current Task
 
-Preparar o projeto para produção, sem alterar a lógica de negócio nesta fase.
+Preparar o projeto para produção, corrigindo apenas riscos críticos antes da
+primeira entrada em produção.
 Foi decidido aceitar temporariamente a limitação de não distinguir o mesmo
 aluno em duas inscrições da mesma disciplina no mesmo horário.
 
 Tambem foi completado o importer de docentes com campos relacionais opcionais.
+Foi revista a fila de pedidos de troca e corrigido o importador de contadores de
+carga horária para a base uniforme de 22/4.
+Foi criada auditoria de emails com consulta read-only no Filament, retenção
+configurável de 180 dias e registo de aceitação pelo SMTP sem guardar o corpo.
+Foi corrigida a duplicação da auditoria: os listeners de email são descobertos
+automaticamente pelo Laravel e já não são registados também no provider.
 Foi corrigido o menu lateral do docente: `TeacherSubjectResource` aparece como
 "As minhas disciplinas" no grupo `Horários`, abaixo de "O Meu Horário". A
 pagina continua a mostrar a grelha, com estado explicito quando nao existem
@@ -93,6 +100,14 @@ formatos de data e valores relacionais por nome.
 
 ## Open Issues
 
+`Teacher::updateHourCounterFromReductions()` e `EditTeacher` ficaram adiados
+para depois do primeiro período de utilização em produção, conforme `DEC-002`.
+O trabalho pendente inclui filtrar reduções por ano letivo, recalcular a
+componente não letiva/total e preservar o histórico dos pivots.
+Na auditoria de emails, falhas ocorridas depois de `MessageSending` podem deixar
+registos em estado `sending`; integração de falhas/bounces fica para uma fase
+posterior.
+
 No host nao existe PHP, mas DDEV fornece PHP 8.3 e MariaDB 10.11.
 DDEV confirma `queue.default=database` e worker ativo.
 `StudentImporter.php` e `StudentObserver.php`: lint e Pint passaram.
@@ -105,6 +120,7 @@ Testes de importadores e autorizacao: 13 passaram (52 assertions).
 Testes de acesso e grelha docente: 14 passaram (46 assertions).
 Teste de navegacao docente: 9 passaram (28 assertions).
 Teste de importacao de periodos: 19 passaram (85 assertions) no conjunto focado.
+Teste de fila de pedidos: 4 passaram (9 assertions) no DDEV.
 `git diff --check` passou.
 
 Auditoria de produção identificou como prioritários: autorização server-side

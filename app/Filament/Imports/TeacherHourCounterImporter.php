@@ -3,6 +3,7 @@
 namespace App\Filament\Imports;
 
 use App\Models\TeacherHourCounter;
+use App\Helpers\DatabaseHelper;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
@@ -24,7 +25,7 @@ class TeacherHourCounterImporter extends Importer
                 ->label('Carga Horária')
                 ->rules(['required', 'integer', 'min:1'])
                 ->example('40'),
-            ImportColumn::make('teaching_load   ')
+            ImportColumn::make('teaching_load')
                 ->label('Horas de Componente Letivo')
                 ->rules(['required', 'integer', 'min:0'])
                 ->example('30'),
@@ -42,23 +43,34 @@ class TeacherHourCounterImporter extends Importer
     {
 
         $this->data['teacher_id'] = trim($this->data['teacher_id'] ?? '');
-        $this->data['workload'] = trim($this->data['workload'] ?? '');
-        $this->data['teaching_load'] = trim($this->data['teaching_load'] ?? '');
-        $this->data['non_teaching_load'] = trim($this->data['non_teaching_load'] ?? '');
+        // A carga base e uniforme; cargos e reducoes sao calculados noutro fluxo.
+        $this->data['workload'] = 26;
+        $this->data['teaching_load'] = 22;
+        $this->data['non_teaching_load'] = 4;
         $this->data['authorized_overtime'] = trim($this->data['authorized_overtime'] ?? '');
     }
 
     public function resolveRecord(): ?TeacherHourCounter
     {
         return DB::transaction(function () {
+            $schoolYearId = DatabaseHelper::getIDActiveSchoolyear();
 
-            return new TeacherHourCounter([
-                'teacher_id' => $this->data['teacher_id'] ?? null,
-                'workload' => $this->data['workload'] ?? 0,
-                'teaching_load' => $this->data['teaching_load'] ?? 0,
-                'non_teaching_load' => $this->data['non_teaching_load'] ?? 0,
-                'authorized_overtime' => $this->data['authorized_overtime'] ?? 0,
-            ]);
+            if (! $schoolYearId) {
+                throw new \RuntimeException('Não existe ano letivo ativo.');
+            }
+
+            return TeacherHourCounter::firstOrNew(
+                [
+                    'id_teacher' => $this->data['teacher_id'] ?? null,
+                    'id_schoolyear' => $schoolYearId,
+                ],
+                [
+                    'workload' => 26,
+                    'teaching_load' => 22,
+                    'non_teaching_load' => 4,
+                    'authorized_overtime' => $this->data['authorized_overtime'] ?? 0,
+                ],
+            );
         });
     }
 
