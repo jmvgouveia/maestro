@@ -226,7 +226,7 @@ class ScheduleResource extends Resource
                                 Select::make('id_building')
                                     ->label('Núcleo ou Pólo')
                                     ->required()
-                                    ->options(Building::all()->pluck('name', 'id'))
+                                    ->options(Building::all()->pluck('address', 'id'))
                                     ->reactive()
                                     ->afterStateUpdated(fn (callable $set) => $set('id_room', null))
                                     ->placeholder('Selecione o local da aula')
