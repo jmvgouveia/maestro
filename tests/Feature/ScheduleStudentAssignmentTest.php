@@ -8,6 +8,7 @@ use App\Models\RegistrationSubject;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\MergedScheduleCalendarService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -70,6 +71,43 @@ class ScheduleStudentAssignmentTest extends TestCase
             $secondSchedule->fresh('room')->room->id_building,
         );
         $this->assertTrue($secondSchedule->fresh('classes')->classes->contains('id', $data['class_id']));
+    }
+
+    public function test_merged_calendar_can_limit_a_teacher_to_authorized_buildings(): void
+    {
+        $data = $this->createScheduleFixture();
+        $firstBuildingId = Schedule::findOrFail($data['selected_schedule_id'])->room->id_building;
+        $now = now();
+        $secondBuildingId = DB::table('buildings')->insertGetId([
+            'name' => 'South Campus',
+            'address' => 'Third test address',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $secondRoomId = DB::table('rooms')->insertGetId([
+            'name' => '303',
+            'id_building' => $secondBuildingId,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        $outsideSchedule = Schedule::create([
+            'id_schoolyear' => $data['school_year_id'],
+            'id_timeperiod' => DB::table('timeperiods')->value('id'),
+            'id_room' => $secondRoomId,
+            'id_teacher' => $data['teacher_id'],
+            'id_weekday' => 4,
+            'id_subject' => $data['subject_id'],
+            'status' => 'Aprovado',
+        ]);
+
+        $calendar = MergedScheduleCalendarService::buildForTeachers(
+            [$data['teacher_id']],
+            [$data['teacher_id'] => [$firstBuildingId]],
+        );
+        $visibleIds = collect($calendar['calendar'])->flatten(2)->pluck('id')->all();
+
+        $this->assertContains($data['selected_schedule_id'], $visibleIds);
+        $this->assertNotContains($outsideSchedule->id, $visibleIds);
     }
 
     public function test_registration_subject_selected_schedule_uses_id_schedule(): void

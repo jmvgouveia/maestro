@@ -4,23 +4,24 @@ namespace App\Filament\Widgets;
 
 use App\Models\Schedule;
 use App\Models\SchoolYear;
-use Filament\Widgets\Widget;
-use Illuminate\Contracts\View\View;
 use App\Models\Teacher;
 use App\Models\TeacherHourCounter;
 use App\Models\User;
 use Filament\Facades\Filament;
-
+use Filament\Widgets\Widget;
+use Illuminate\Contracts\View\View;
 
 class OverviewWidget extends Widget
 {
     protected static string $view = 'filament.widgets.overview-widget';
+
     protected static ?int $sort = 2;
+
     protected static bool $isLazy = false;
 
     protected int|string|array $pollingInterval = '5s';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function render(): View
     {
@@ -50,20 +51,31 @@ class OverviewWidget extends Widget
             ->where('id_schoolyear', $anoLetivoAtivo->id)
             ->first();
 
-        //$letivaDisponivel = $counter?->teaching_load ?? 0;
-        //$naoLetivaDisponivel = $counter?->non_teaching_load ?? 0;
+        // $letivaDisponivel = $counter?->teaching_load ?? 0;
+        // $naoLetivaDisponivel = $counter?->non_teaching_load ?? 0;
 
         // Aulas
-        $aulasLetivas = $schedules->filter(fn($s) => strtolower($s->subject->type ?? '') === 'letiva')->count();
-        $aulasNaoLetivas = $schedules->filter(fn($s) => strtolower($s->subject->type ?? '') === 'nao letiva')->count();
+        $aulasLetivas = $schedules->filter(fn ($s) => strtolower($s->subject->type ?? '') === 'letiva')->count();
+        $aulasNaoLetivas = $schedules->filter(fn ($s) => strtolower($s->subject->type ?? '') === 'nao letiva')->count();
 
         $cargos = $teacher->positions()
-            ->where('id_schoolyear', $anoLetivoAtivo->id)
+            ->wherePivot('id_schoolyear', $anoLetivoAtivo->id)
             ->get()
-            ->map(function ($cargo) {
+            ->map(function ($cargo) use ($teacher, $anoLetivoAtivo) {
+                $description = $cargo->description ?? 'Cargo sem descrição';
+
+                if (str_contains($cargo->name, 'Coordenador de Polo/')
+                    && str_contains($cargo->name, 'Núcleo')) {
+                    $buildings = $this->teacherCoordinatorBuildingNames($teacher, $anoLetivoAtivo->id);
+
+                    if ($buildings !== '') {
+                        $description .= " | Polo/Núcleo: {$buildings}";
+                    }
+                }
+
                 return [
                     'nome' => $cargo->name,
-                    'descricao' => $cargo->description ?? 'Cargo sem descrição',
+                    'descricao' => $description,
                     'redução_letiva' => $cargo->reduction_l ?? 0,
                     'redução_naoletiva' => $cargo->reduction_nl ?? 0,
                 ];
@@ -96,6 +108,15 @@ class OverviewWidget extends Widget
         ];
 
         return view(static::$view, compact('resumo'));
+    }
+
+    private function teacherCoordinatorBuildingNames(Teacher $teacher, int $schoolYearId): string
+    {
+        return $teacher->coordinatorBuildings()
+            ->wherePivot('id_schoolyear', $schoolYearId)
+            ->orderBy('buildings.name')
+            ->pluck('buildings.name')
+            ->implode(', ');
     }
 
     public static function canView(): bool

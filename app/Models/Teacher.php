@@ -74,19 +74,29 @@ class Teacher extends Model
         return $this->belongsToMany(Position::class, 'teacher_positions', 'id_teacher', 'id_position')->withPivot('id_schoolyear');
     }
 
+    public function coordinatorBuildings()
+    {
+        return $this->belongsToMany(Building::class, 'teacher_coordinator_buildings', 'id_teacher', 'id_building')
+            ->withPivot('id_schoolyear')
+            ->withTimestamps();
+    }
+
     public function timeReductions()
     {
         return $this->belongsToMany(TimeReduction::class, 'teacher_time_reductions', 'id_teacher', 'id_time_reduction')
             ->withPivot('id_schoolyear');
     }
+
     public function hourCounter()
     {
         return $this->hasOne(TeacherHourCounter::class, 'id_teacher');
     }
+
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'id_teacher');
     }
+
     public function updateHourCounterFromReductions(?int $schoolYearId = null): void
     {
 
@@ -121,6 +131,7 @@ class Teacher extends Model
                 ]);
         }
     }
+
     protected $casts = [
         'birthdate' => 'date:Y-m-d',
         'startingdate' => 'date:Y-m-d',

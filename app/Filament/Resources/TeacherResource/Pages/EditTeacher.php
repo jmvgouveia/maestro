@@ -2,21 +2,20 @@
 
 namespace App\Filament\Resources\TeacherResource\Pages;
 
+use App\Filament\Resources\Concerns\RedirectsToList;
 use App\Filament\Resources\TeacherResource;
-use App\Models\Position;
 use App\Models\SchoolYear;
-use App\Models\TimeReduction;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class EditTeacher extends EditRecord
 {
     protected static string $resource = TeacherResource::class;
 
-    use \App\Filament\Resources\Concerns\RedirectsToList;
+    use RedirectsToList;
 
     protected function getHeaderActions(): array
     {
@@ -30,6 +29,11 @@ class EditTeacher extends EditRecord
         $teacher = $this->record->load('user');
 
         $data['user']['email'] = $teacher->user->email ?? '';
+        $data['coordinator_buildings'] = $teacher->coordinatorBuildings()
+            ->wherePivot('id_schoolyear', SchoolYear::query()->where('active', true)->value('id'))
+            ->pluck('buildings.id')
+            ->all();
+
         return $data;
     }
 
@@ -40,14 +44,17 @@ class EditTeacher extends EditRecord
 
             $record->user->email = $data['user']['email'];
 
-            if (!empty($data['user']['password'])) {
+            if (! empty($data['user']['password'])) {
                 $record->user->password = Hash::make($data['user']['password']);
             }
 
             $record->user->saveOrFail();
         }
 
-        unset($data['user']);
+        $coordinatorBuildingIds = $data['coordinator_buildings'] ?? [];
+        $positionsSubmitted = array_key_exists('positions', $data);
+        $positionIds = $data['positions'] ?? [];
+        unset($data['user'], $data['coordinator_buildings']);
 
         $record->updateOrFail($data);
 
@@ -69,9 +76,39 @@ class EditTeacher extends EditRecord
                 ->update(['id_schoolyear' => $schoolYearId]);
         }
 
+        $this->syncCoordinatorBuildings($record, $coordinatorBuildingIds, $positionIds, $positionsSubmitted, $schoolYearId);
+
         $record->loadMissing(['positions', 'timeReductions']); // garante que relações estão atualizadas
         $record->updateHourCounterFromReductions($schoolYearId);
 
         return $record;
+    }
+
+    private function syncCoordinatorBuildings(Model $teacher, array $buildingIds, array $positionIds, bool $positionsSubmitted, ?int $schoolYearId): void
+    {
+        if (! $positionsSubmitted) {
+            return;
+        }
+
+        DB::table('teacher_coordinator_buildings')
+            ->where('id_teacher', $teacher->id)
+            ->where('id_schoolyear', $schoolYearId)
+            ->delete();
+
+        if (! $schoolYearId || ! TeacherResource::hasBuildingCoordinatorPosition($positionIds)) {
+            return;
+        }
+
+        $rows = collect($buildingIds)->filter()->unique()->map(fn ($buildingId): array => [
+            'id_teacher' => $teacher->id,
+            'id_building' => (int) $buildingId,
+            'id_schoolyear' => $schoolYearId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->all();
+
+        if ($rows !== []) {
+            DB::table('teacher_coordinator_buildings')->insert($rows);
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TeacherResource\Pages;
 
+use App\Filament\Resources\Concerns\RedirectsToList;
 use App\Filament\Resources\TeacherResource;
 use App\Models\SchoolYear;
 use App\Models\TeacherHourCounter;
@@ -10,7 +11,6 @@ use App\Services\UserActivationService;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -18,7 +18,7 @@ class CreateTeacher extends CreateRecord
 {
     protected static string $resource = TeacherResource::class;
 
-    use \App\Filament\Resources\Concerns\RedirectsToList;
+    use RedirectsToList;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
@@ -75,10 +75,12 @@ class CreateTeacher extends CreateRecord
         ]);
 
         $this->syncPivotWithSchoolYear($this->record);
+        $this->syncCoordinatorBuildings($this->record, $this->data['coordinator_buildings'] ?? []);
     }
+
     protected function syncPivotWithSchoolYear($teacher): void
     {
-        $schoolYearId = \App\Models\SchoolYear::where('active', true)->value('id');
+        $schoolYearId = SchoolYear::where('active', true)->value('id');
 
         foreach ($teacher->positions as $position) {
             DB::table('teacher_positions')
@@ -92,6 +94,32 @@ class CreateTeacher extends CreateRecord
                 ->where('id_teacher', $teacher->id)
                 ->where('id_time_reduction', $reduction->id)
                 ->update(['id_schoolyear' => $schoolYearId]);
+        }
+    }
+
+    private function syncCoordinatorBuildings($teacher, array $buildingIds): void
+    {
+        $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
+
+        $positionIds = $teacher->positions()
+            ->wherePivot('id_schoolyear', $schoolYearId)
+            ->pluck('positions.id')
+            ->all();
+
+        if (! $schoolYearId || ! TeacherResource::hasBuildingCoordinatorPosition($positionIds)) {
+            return;
+        }
+
+        $rows = collect($buildingIds)->filter()->unique()->map(fn ($buildingId): array => [
+            'id_teacher' => $teacher->id,
+            'id_building' => (int) $buildingId,
+            'id_schoolyear' => $schoolYearId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ])->all();
+
+        if ($rows !== []) {
+            DB::table('teacher_coordinator_buildings')->insert($rows);
         }
     }
 }

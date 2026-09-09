@@ -1,6 +1,6 @@
 # Current Project State
 
-Last updated: 2026-09-07
+Last updated: 2026-09-09
 
 ## Current Objective
 
@@ -31,6 +31,14 @@ Foi adicionada a tipologia obrigatória no fluxo de cursos e foram substituídas
 datas globais de marcação por seis datas configuráveis em cada ano letivo. A
 validação aplica todas as balizas às turmas de um horário e aos pedidos de troca;
 Super Admin mantém bypass server-side.
+Foi implementada a coordenação por polo/núcleo para os três cargos oficiais,
+com associação anual entre docente e edifício. A página de horário sobreposto
+preserva o âmbito por departamento e limita os horários aos edifícios atribuídos
+ao coordenador de polo.
+O menu da página aparece com o cargo ativo mesmo antes de existirem edifícios
+associados, sem abrir dados; a identificação dos cargos aceita também a variante
+textual `Polo/ Núcleo`. O resumo de carga horária mostra os polos/núcleos na
+descrição do cargo.
 
 ## Current State
 
@@ -89,6 +97,15 @@ nao foram revertidas.
   validação por todas as turmas/tipologias e pedidos de troca.
 - `tests/Feature/ScheduleWindowByCourseTypeTest.php`: cobertura das janelas,
   mistura de tipologias, cursos sem tipologia e bypass administrativo.
+- `database/migrations/2026_09_09_120001_create_teacher_coordinator_buildings_table.php`:
+  associação anual docente-edifício para coordenadores de polo/núcleo.
+- `app/Filament/Pages/HorarioSobreposto.php` e
+  `app/Services/MergedScheduleCalendarService.php`: autorização e filtro dos
+  horários por departamento/edifício.
+- `app/Filament/Resources/TeacherResource.php` e páginas de criação/edição:
+  configuração dos polos/núcleos coordenados no ano ativo.
+- `app/Filament/Widgets/OverviewWidget.php`: descrição dos cargos com os
+  polos/núcleos atribuídos.
 
 ## Completed
 
@@ -111,6 +128,11 @@ Foram adicionados exemplos visíveis no importer para todos os campos, incluindo
 formatos de data e valores relacionais por nome.
 Foram adicionadas cinco provas focadas para as janelas por tipologia e a suite
 completa passou novamente com 101 testes e 344 asserções.
+Foi adicionada a associação de coordenadores de polo/núcleo e um teste de
+isolamento do calendário por edifício; a suite completa passou com 103 testes e
+349 asserções.
+Foi corrigida a visibilidade do menu para cargos sem associação ainda configurada
+e foram aceites as duas grafias de `Polo/Núcleo` observadas nos dados.
 
 ## Open Issues
 
@@ -136,6 +158,8 @@ Teste de navegacao docente: 9 passaram (28 assertions).
 Teste de importacao de periodos: 19 passaram (85 assertions) no conjunto focado.
 Teste de fila de pedidos: 4 passaram (9 assertions) no DDEV.
 `git diff --check` passou.
+Migration `2026_09_09_120001_create_teacher_coordinator_buildings_table` aplicada
+no DDEV; Pint e a suite completa passaram após a alteração.
 
 Auditoria de produção identificou como prioritários: autorização server-side
 nas ações de ativação de utilizadores e no modal de pedidos de troca; a falha
@@ -204,6 +228,8 @@ migration faz backfill antes de remover a coluna.
    com várias tipologias e as três ações de pedidos de troca.
 3. Retomar as prioridades de segurança e dependências listadas no state of the
    art após esta configuração operacional.
+4. Associar os docentes coordenadores aos edifícios no ano ativo e fazer
+   aceitação manual da página `Horário Departamento`.
 
 Contexto do incidente: o servidor anterior foi eliminado; o servidor e a
 instalacao atuais sao novos e usam credenciais novas. Nao ha evidencia forense
