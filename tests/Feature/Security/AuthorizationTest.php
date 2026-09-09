@@ -79,6 +79,25 @@ class AuthorizationTest extends TestCase
         $this->assertTrue((new StudentPolicy)->update($user, new Student(['user_id' => 999])));
     }
 
+    public function test_human_resources_can_view_and_update_teachers(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(Role::findOrCreate('Recursos Humanos'));
+        $permissions = ['view Teacher', 'view-any Teacher', 'update Teacher'];
+
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission);
+        }
+
+        $user->givePermissionTo($permissions);
+
+        $policy = new TeacherPolicy;
+
+        $this->assertTrue($policy->viewAny($user));
+        $this->assertTrue($policy->view($user, new Teacher));
+        $this->assertTrue($policy->update($user, new Teacher));
+    }
+
     public function test_conflict_manager_can_view_schedules_and_all_schedule_requests(): void
     {
         $user = User::factory()->create();

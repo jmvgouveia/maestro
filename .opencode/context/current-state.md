@@ -133,6 +133,9 @@ isolamento do calendário por edifício; a suite completa passou com 103 testes 
 349 asserções.
 Foi corrigida a visibilidade do menu para cargos sem associação ainda configurada
 e foram aceites as duas grafias de `Polo/Núcleo` observadas nos dados.
+O papel `Recursos Humanos` passou a ter permissões de consulta e edição de
+docentes; o email do utilizador associado fica bloqueado na UI e protegido
+server-side durante a edição.
 
 ## Open Issues
 

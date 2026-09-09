@@ -207,6 +207,7 @@ class TeacherResource extends Resource
                             ->label('E-mail')
                             ->email()
                             ->required()
+                            ->disabled(fn () => Filament::auth()->user()?->hasRole('Recursos Humanos'))
                             ->placeholder('Introduza e-mail'),
                     ]),
 

@@ -42,7 +42,9 @@ class EditTeacher extends EditRecord
         if ($record->user) {
             $record->user->name = $data['name'];
 
-            $record->user->email = $data['user']['email'];
+            if (! auth()->user()?->hasRole('Recursos Humanos')) {
+                $record->user->email = $data['user']['email'];
+            }
 
             if (! empty($data['user']['password'])) {
                 $record->user->password = Hash::make($data['user']['password']);
