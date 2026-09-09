@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Resources\TeacherSubjectResource;
 use App\Filament\Resources\ScheduleConflictResource;
 use App\Filament\Resources\ScheduleResource;
+use App\Filament\Resources\TeacherSubjectResource;
 use App\Filament\Widgets\WeeklyScheduleWidget;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -61,6 +61,7 @@ class ExampleTest extends TestCase
 
         $this->assertEqualsCanonicalizing([
             'Académico',
+            'Ajuda',
             'Horários',
             'Recursos',
             'Administração',

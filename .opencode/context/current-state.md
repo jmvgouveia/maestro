@@ -38,7 +38,19 @@ ao coordenador de polo.
 O menu da página aparece com o cargo ativo mesmo antes de existirem edifícios
 associados, sem abrir dados; a identificação dos cargos aceita também a variante
 textual `Polo/ Núcleo`. O resumo de carga horária mostra os polos/núcleos na
-descrição do cargo.
+linha seguinte à descrição do cargo.
+Quando o cargo de coordenação existe mas não há associação anual a edifícios,
+o resumo mostra `Polo/Núcleo: Não configurado` em vez de ocultar a informação.
+A deteção usa `positions.name`, onde está o nome completo do cargo, e a
+identificação apresentada concatena `buildings.name` e `buildings.address`.
+O resumo também apresenta o departamento do docente em linha destacada para
+cargos de coordenação de departamento, usando a relação `Teacher.department`.
+Na página de horário sobreposto, a lista de docentes identifica o âmbito pelo
+qual cada docente está disponível: `Departamento`, `Polo/Núcleo` ou
+`Departamento + Polo/Núcleo`; o acesso global aparece como `Acesso global`.
+A página disponibiliza ações condicionais para selecionar todos os docentes do
+departamento e/ou do Polo/Núcleo; cada ação só aparece quando o coordenador tem
+o cargo correspondente.
 
 ## Current State
 
@@ -200,7 +212,8 @@ algumas relações Eloquent suspeitas.
 
 ## Blockers
 
-Nao existem falhas na suite completa atual. A limitação de distinguir o mesmo
+Nao existem falhas na suite completa atual: 112 testes e 376 assertions passam.
+A auditoria Composer nao encontrou avisos (`composer audit`). A limitação de distinguir o mesmo
 aluno em duas inscrições da mesma disciplina no mesmo horário foi aceite para
 este lançamento e está registada em `decisions.md` como `DEC-001`.
 O log antigo confirma a colisao de email auxiliar no `StudentObserver`; a
@@ -213,6 +226,12 @@ foram limpos sem retry para evitar duplicacoes.
 As tabelas `classes` e `class_buildings` foram limpas no banco DDEV de testes
 para permitir novo import; cursos, alunos, edificios e horarios foram
 preservados.
+O bypass de autorizacao por utilizador com ID 1 foi removido; a role `Gestor
+Conflitos` e agora verificada pelo nome, com teste dedicado. A suite completa
+passou novamente depois da correcao do teste de navegacao da pagina Ajuda.
+As alteracoes de coordenacao, autorizacao e testes ainda estao nao commitadas.
+O utilizador confirmou que a configuracao real de producao, o worker, os
+backups e o DKIM ja estao tratados no ambiente de producao.
 
 ## Validations Already Performed
 

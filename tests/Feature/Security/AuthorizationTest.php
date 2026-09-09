@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Security;
 
+use App\Filament\Resources\ScheduleRequestResource\Pages\ListScheduleRequests;
 use App\Filament\Resources\ScheduleResource;
 use App\Models\Schedule;
 use App\Models\ScheduleRequest;
@@ -14,6 +15,7 @@ use App\Policies\ScheduleRequestPolicy;
 use App\Policies\StudentPolicy;
 use App\Policies\TeacherPolicy;
 use App\Policies\UserPolicy;
+use Filament\Facades\Filament;
 use Filament\Panel;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -119,6 +121,19 @@ class AuthorizationTest extends TestCase
         $this->assertTrue((new SchedulePolicy)->viewAny($user));
         $this->assertTrue((new ScheduleRequestPolicy)->viewAny($user));
         $this->assertTrue((new ScheduleRequestPolicy)->update($user, new ScheduleRequest));
+    }
+
+    public function test_user_id_one_is_not_implicitly_a_conflict_manager(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(Role::findOrCreate('Professor'));
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        $method = new \ReflectionMethod(ListScheduleRequests::class, 'isGestorConflitos');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke(app(ListScheduleRequests::class)));
     }
 
     public function test_professor_schedule_access_is_limited_to_own_teacher(): void

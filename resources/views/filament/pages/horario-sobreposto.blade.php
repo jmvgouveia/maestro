@@ -23,7 +23,7 @@
         <span class="inline-flex items-center gap-2 px-2 py-1 rounded-md border"
             style="border-color: {{ $teacherPalette[$t->id] }};">
             <span class="inline-block h-3 w-3 rounded-full" style="background: {{ $teacherPalette[$t->id] }}"></span>
-            {{ $t->name }}
+            {{ $t->name }}@if (!empty($teacherScopes[$t->id])) - {{ $teacherScopes[$t->id] }}@endif
         </span>
         @endforeach
     </div>

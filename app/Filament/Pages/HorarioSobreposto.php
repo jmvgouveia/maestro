@@ -7,6 +7,7 @@ use App\Models\SchoolYear;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Services\MergedScheduleCalendarService;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -46,6 +47,29 @@ class HorarioSobreposto extends Page
             );
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('selectAllTeachers')
+                ->label('Selecionar todos')
+                ->icon('heroicon-o-check-circle')
+                ->outlined()
+                ->action(fn (): array => $this->data['teacher_ids'] = $this->allowedTeacherIds()),
+            Action::make('selectDepartmentTeachers')
+                ->label('Selecionar departamento')
+                ->icon('heroicon-o-user-group')
+                ->outlined()
+                ->visible(fn (): bool => static::userHasDepartmentCoordinatorPosition(Filament::auth()->user()))
+                ->action(fn (): array => $this->data['teacher_ids'] = $this->departmentTeacherIds()),
+            Action::make('selectBuildingTeachers')
+                ->label('Selecionar Polo/Núcleo')
+                ->icon('heroicon-o-building-office-2')
+                ->outlined()
+                ->visible(fn (): bool => static::userHasBuildingCoordinatorPosition(Filament::auth()->user()))
+                ->action(fn (): array => $this->data['teacher_ids'] = $this->buildingTeacherIds()),
+        ];
+    }
+
     public function form(Form $form): Form
     {
         return $form->schema([
@@ -75,15 +99,40 @@ class HorarioSobreposto extends Page
             return null;
         }
 
-        return MergedScheduleCalendarService::buildForTeachers($ids, $this->allowedBuildingScopes($allowedTeacherIds));
+        $merged = MergedScheduleCalendarService::buildForTeachers($ids, $this->allowedBuildingScopes($allowedTeacherIds));
+        $merged['teacherScopes'] = Teacher::query()
+            ->whereIn('id', $ids)
+            ->get()
+            ->mapWithKeys(fn (Teacher $teacher): array => [$teacher->id => $this->teacherScopeFor($teacher)])
+            ->all();
+
+        return $merged;
     }
 
     protected function teacherOptions(): array
     {
+        $user = Filament::auth()->user();
+        $activeSchoolYearId = SchoolYear::query()->where('active', true)->value('id');
+        $buildingIds = $user instanceof User ? static::coordinatorBuildingIds($user) : [];
+        $isDepartmentCoordinator = $user instanceof User && static::userHasDepartmentCoordinatorPosition($user);
+        $departmentId = $user?->teacher?->id_department;
+        $isUnrestricted = $user instanceof User && static::hasUnrestrictedAccess($user);
+
         return $this->allowedTeacherQuery()
             ->orderBy('name')
-            ->pluck('name', 'id')
-            ->toArray();
+            ->get()
+            ->mapWithKeys(function (Teacher $teacher) use ($isUnrestricted, $activeSchoolYearId, $isDepartmentCoordinator, $departmentId, $buildingIds): array {
+                $scope = $isUnrestricted ? null : static::teacherScopeLabel(
+                    $teacher,
+                    $activeSchoolYearId,
+                    $isDepartmentCoordinator,
+                    $departmentId,
+                    $buildingIds,
+                );
+
+                return [$teacher->id => $scope ? "{$teacher->name} - {$scope}" : $teacher->name];
+            })
+            ->all();
     }
 
     protected function allowedTeacherIds(): array
@@ -92,6 +141,46 @@ class HorarioSobreposto extends Page
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->toArray();
+    }
+
+    protected function departmentTeacherIds(): array
+    {
+        $user = Filament::auth()->user();
+        $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
+        $departmentId = $user?->teacher?->id_department;
+
+        if (! $schoolYearId || ! $departmentId) {
+            return [];
+        }
+
+        return Teacher::query()
+            ->where('id_department', $departmentId)
+            ->whereHas('schedules', fn ($query) => $query
+                ->where('id_schoolyear', $schoolYearId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP']))
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    protected function buildingTeacherIds(): array
+    {
+        $user = Filament::auth()->user();
+        $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
+        $buildingIds = $user instanceof User ? static::coordinatorBuildingIds($user) : [];
+
+        if (! $schoolYearId || $buildingIds === []) {
+            return [];
+        }
+
+        return Teacher::query()
+            ->whereHas('schedules', fn ($query) => $query
+                ->where('id_schoolyear', $schoolYearId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+                ->whereHas('room', fn ($roomQuery) => $roomQuery->whereIn('id_building', $buildingIds)))
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
     }
 
     protected function allowedTeacherQuery()
@@ -232,6 +321,55 @@ class HorarioSobreposto extends Page
             'Coordenador Departamento Curricular (30)',
             'Coordenador Departamento Curricular (+31)',
         ];
+    }
+
+    protected static function teacherScopeLabel(
+        Teacher $teacher,
+        ?int $schoolYearId,
+        bool $isDepartmentCoordinator,
+        mixed $departmentId,
+        array $buildingIds,
+    ): string {
+        if (! $schoolYearId) {
+            return 'Sem ano letivo ativo';
+        }
+
+        $departmentScope = $isDepartmentCoordinator
+            && $departmentId
+            && (int) $teacher->id_department === (int) $departmentId
+            && $teacher->schedules()
+                ->where('id_schoolyear', $schoolYearId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+                ->exists();
+
+        $buildingScope = $buildingIds !== []
+            && $teacher->schedules()
+                ->where('id_schoolyear', $schoolYearId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+                ->whereHas('room', fn ($query) => $query->whereIn('id_building', $buildingIds))
+                ->exists();
+
+        return match (true) {
+            $departmentScope && $buildingScope => 'Departamento + Polo/Núcleo',
+            $departmentScope => 'Departamento',
+            $buildingScope => 'Polo/Núcleo',
+            default => '',
+        };
+    }
+
+    protected function teacherScopeFor(Teacher $teacher): string
+    {
+        $user = Filament::auth()->user();
+        $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
+        $buildingIds = $user instanceof User ? static::coordinatorBuildingIds($user) : [];
+
+        return static::teacherScopeLabel(
+            $teacher,
+            $schoolYearId,
+            $user instanceof User && static::userHasDepartmentCoordinatorPosition($user),
+            $user?->teacher?->id_department,
+            $buildingIds,
+        );
     }
 
     protected static function buildingCoordinatorPositionNames(): array

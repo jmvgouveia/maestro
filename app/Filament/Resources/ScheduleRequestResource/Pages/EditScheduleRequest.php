@@ -37,7 +37,7 @@ class EditScheduleRequest extends EditRecord
 
         $isRequestOwner = $teacherId === $requesterId;
         $isReceiver = $teacherId === $conflictOwnerId;
-        $isGestor = in_array(Filament::auth()->id(), [1]);
+        $isGestor = Filament::auth()->user()?->hasRole('Gestor Conflitos') ?? false;
         $isFirstPending = ScheduleRequestQueueHelper::isFirstPending($this->record->id_schedule, $this->record->id);
 
         $status = $this->record->status;
@@ -76,7 +76,8 @@ class EditScheduleRequest extends EditRecord
                         ->required(),
                 ])
 
-                ->action(function (array $data) use ($isGestor) {
+                ->action(function (array $data) {
+                    $isGestor = Filament::auth()->user()?->hasRole('Gestor Conflitos') ?? false;
 
                     if ($this->record->status === 'Eliminado') {
 
@@ -189,7 +190,8 @@ class EditScheduleRequest extends EditRecord
                 ->form([
                     Textarea::make('response')->label('Justificação para Recusa')->required(),
                 ])
-                ->action(function (array $data) use ($isGestor) {
+                ->action(function (array $data) {
+                    $isGestor = Filament::auth()->user()?->hasRole('Gestor Conflitos') ?? false;
 
                     if ($this->record->status === 'Eliminado') {
 
@@ -366,7 +368,7 @@ class EditScheduleRequest extends EditRecord
                     DB::transaction(function () {
                         $user = Filament::auth()->user();
                         $teacherId = $user?->teacher?->id;
-                        $isGestor = in_array($user->id, [1]);
+                        $isGestor = $user?->hasRole('Gestor Conflitos') ?? false;
 
                         $scheduleRequest = $this->record->refresh();
                         $scheduleNew = $scheduleRequest->scheduleNew;

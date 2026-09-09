@@ -110,6 +110,16 @@ $totalReducaoReducoes = collect($resumo['tempo_reducoes'] ?? [])->sum('redução
                         <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
                             {{ $cargo['descricao'] }}
                         </p>
+                        @if (!empty($cargo['polo_nucleo']))
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+                            Polo/Núcleo: {{ $cargo['polo_nucleo'] }}
+                        </p>
+                        @endif
+                        @if (!empty($cargo['departamento']))
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+                            Departamento: {{ $cargo['departamento'] }}
+                        </p>
+                        @endif
                         <div class="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                             redução de {{ $cargo['redução_letiva'] }} h
                         </div>

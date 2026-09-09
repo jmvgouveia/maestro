@@ -63,19 +63,25 @@ class OverviewWidget extends Widget
             ->get()
             ->map(function ($cargo) use ($teacher, $anoLetivoAtivo) {
                 $description = $cargo->description ?? 'Cargo sem descrição';
+                $coordinatedBuildings = null;
+                $coordinatedDepartment = null;
 
                 if (str_contains($cargo->name, 'Coordenador de Polo/')
                     && str_contains($cargo->name, 'Núcleo')) {
-                    $buildings = $this->teacherCoordinatorBuildingNames($teacher, $anoLetivoAtivo->id);
+                    $coordinatedBuildings = $this->teacherCoordinatorBuildingNames($teacher, $anoLetivoAtivo->id)
+                        ?: 'Não configurado';
+                }
 
-                    if ($buildings !== '') {
-                        $description .= " | Polo/Núcleo: {$buildings}";
-                    }
+                if (str_contains(strtolower($cargo->name), 'coordenador')
+                    && str_contains(strtolower($cargo->name), 'departamento')) {
+                    $coordinatedDepartment = $teacher->department?->name ?: 'Não configurado';
                 }
 
                 return [
                     'nome' => $cargo->name,
                     'descricao' => $description,
+                    'polo_nucleo' => $coordinatedBuildings,
+                    'departamento' => $coordinatedDepartment,
                     'redução_letiva' => $cargo->reduction_l ?? 0,
                     'redução_naoletiva' => $cargo->reduction_nl ?? 0,
                 ];
@@ -115,7 +121,10 @@ class OverviewWidget extends Widget
         return $teacher->coordinatorBuildings()
             ->wherePivot('id_schoolyear', $schoolYearId)
             ->orderBy('buildings.name')
-            ->pluck('buildings.name')
+            ->get(['buildings.name', 'buildings.address'])
+            ->map(fn ($building): string => collect([$building->name, $building->address])
+                ->filter()
+                ->implode(' - '))
             ->implode(', ');
     }
 
