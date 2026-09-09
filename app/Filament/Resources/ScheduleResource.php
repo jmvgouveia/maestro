@@ -423,8 +423,8 @@ class ScheduleResource extends Resource
                                 if ($filtrarUltimoAno) {
                                      $professorId = Auth::user()?->teacher?->id;
                                      $anoLetivoAnterior = SchoolYear::query()
-                                         ->where('start_date', '<', $schoolYear->start_date)
-                                         ->orderByDesc('start_date')
+                                          ->where('schoolyear', '<', $schoolYear->schoolyear)
+                                          ->orderByDesc('schoolyear')
                                          ->first();
 
                                     if (! $anoLetivoAnterior) {

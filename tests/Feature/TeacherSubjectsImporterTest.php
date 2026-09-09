@@ -30,8 +30,12 @@ class TeacherSubjectsImporterTest extends TestCase
         $user = \App\Models\User::factory()->create();
         $schoolYear = SchoolYear::create([
             'schoolyear' => '2025/2026',
-            'start_date' => '2025-09-01',
-            'end_date' => '2026-08-31',
+            'start_date_especializado' => '2025-09-01',
+            'end_date_especializado' => '2026-08-31',
+            'start_date_profissional' => '2025-09-01',
+            'end_date_profissional' => '2026-08-31',
+            'start_date_livre' => '2025-09-01',
+            'end_date_livre' => '2026-08-31',
             'active' => true,
         ]);
         $teacher = Teacher::create([

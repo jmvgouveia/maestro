@@ -106,8 +106,12 @@ class ScheduleRequestQueueTest extends TestCase
         $now = now();
         $schoolYearId = DB::table('schoolyears')->insertGetId([
             'schoolyear' => '2026/2027',
-            'start_date' => '2026-09-01',
-            'end_date' => '2027-07-31',
+            'start_date_especializado' => '2026-09-01',
+            'end_date_especializado' => '2027-07-31',
+            'start_date_profissional' => '2026-09-01',
+            'end_date_profissional' => '2027-07-31',
+            'start_date_livre' => '2026-09-01',
+            'end_date_livre' => '2027-07-31',
             'active' => true,
             'created_at' => $now,
             'updated_at' => $now,

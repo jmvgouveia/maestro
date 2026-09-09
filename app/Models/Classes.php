@@ -32,6 +32,11 @@ class Classes extends Model
         );
     }
 
+    public function schedules()
+    {
+        return $this->belongsToMany(Schedule::class, 'schedules_classes', 'id_class', 'id_schedule');
+    }
+
     public function buildings()
     {
         return $this->belongsToMany(Building::class, 'class_buildings', 'id_class', 'id_building')

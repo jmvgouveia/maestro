@@ -11,6 +11,8 @@ ordem de risco.
 
 Preparar o projeto para produção, corrigindo apenas riscos críticos antes da
 primeira entrada em produção.
+Foi implementado o bloqueio granular de lançamento de horários por tipologia de
+curso. As tipologias oficiais são `Especializado`, `Profissional` e `Livre`.
 Foi decidido aceitar temporariamente a limitação de não distinguir o mesmo
 aluno em duas inscrições da mesma disciplina no mesmo horário.
 
@@ -25,6 +27,10 @@ Foi corrigido o menu lateral do docente: `TeacherSubjectResource` aparece como
 "As minhas disciplinas" no grupo `Horários`, abaixo de "O Meu Horário". A
 pagina continua a mostrar a grelha, com estado explicito quando nao existem
 periodos horarios.
+Foi adicionada a tipologia obrigatória no fluxo de cursos e foram substituídas as
+datas globais de marcação por seis datas configuráveis em cada ano letivo. A
+validação aplica todas as balizas às turmas de um horário e aos pedidos de troca;
+Super Admin mantém bypass server-side.
 
 ## Current State
 
@@ -77,6 +83,12 @@ nao foram revertidas.
   modelo existente `Timeperiod` (sensibilidade a maiúsculas/minúsculas).
 - `AGENTS.md`, `.opencode/agents/continuity.md` e `.opencode/context/`:
   configuracao de continuidade.
+- `database/migrations/2026_09_09_120000_add_course_types_and_schedule_windows.php`:
+  tipologias e janelas granulares; remove `schoolyears.start_date/end_date`.
+- `app/Filament/Resources/ScheduleResource/Traits/CheckScheduleWindow.php`:
+  validação por todas as turmas/tipologias e pedidos de troca.
+- `tests/Feature/ScheduleWindowByCourseTypeTest.php`: cobertura das janelas,
+  mistura de tipologias, cursos sem tipologia e bypass administrativo.
 
 ## Completed
 
@@ -97,6 +109,8 @@ de formulas em export CSV, validacao dos intervalos de inscricao, relacao
 SchoolYear-students corrigida e selecao do ano anterior por data.
 Foram adicionados exemplos visíveis no importer para todos os campos, incluindo
 formatos de data e valores relacionais por nome.
+Foram adicionadas cinco provas focadas para as janelas por tipologia e a suite
+completa passou novamente com 101 testes e 344 asserções.
 
 ## Open Issues
 
@@ -182,22 +196,14 @@ migration faz backfill antes de remover a coluna.
 
 ## Next Action
 
-### Security priorities for next session
+### Next actions
 
-1. Preparar patches sem mudanca major: Laravel 12.69.1, Filament 3.3.55 e
-   plugin de permissoes 2.3.3, com revisao do lockfile e testes focados.
-2. Decidir e preparar a remocao das dependencias sem uso confirmado, sem
-   misturar esta limpeza com upgrades major.
-3. Definir auditorias automaticas de `composer audit --locked` e `npm audit`,
-   com resposta urgente a RCEs e vulnerabilidades no catalogo CISA KEV.
-4. Rever o hardening do novo servidor: PHP-FPM sem escrita no codigo, escrita
-   apenas em `storage/` e `bootstrap/cache/`, PHP apenas por `public/index.php`,
-   sem execucao em `public/storage`, SSH por chave, root remoto desativado,
-   firewall, Fail2ban, updates de seguranca e monitorizacao de cron/systemd/
-   Supervisor/`authorized_keys`.
-5. Preparar PHP 8.5 em staging; deixar Filament 5, Livewire 4 e Laravel 13 para
-   uma migracao posterior e faseada, com testes de permissoes, MFA,
-   impersonation e importadores.
+1. Classificar todos os cursos existentes em `Especializado`, `Profissional` ou
+   `Livre` e configurar as seis datas no ano letivo ativo.
+2. Fazer aceitação manual no painel para criação/edição de horários, horários
+   com várias tipologias e as três ações de pedidos de troca.
+3. Retomar as prioridades de segurança e dependências listadas no state of the
+   art após esta configuração operacional.
 
 Contexto do incidente: o servidor anterior foi eliminado; o servidor e a
 instalacao atuais sao novos e usam credenciais novas. Nao ha evidencia forense

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ScheduleResource\Pages;
 
+use App\Filament\Resources\Concerns\RedirectsToList;
 use App\Filament\Resources\ScheduleResource;
 use App\Filament\Resources\ScheduleResource\Traits\CheckScheduleWindow;
 use App\Filament\Resources\ScheduleResource\Traits\ChecksScheduleConflicts;
@@ -24,7 +25,7 @@ class EditSchedule extends EditRecord
 {
     protected static string $resource = ScheduleResource::class;
 
-    use \App\Filament\Resources\Concerns\RedirectsToList;
+    use RedirectsToList;
 
     public ?Schedule $conflictingSchedule = null;
 
@@ -39,7 +40,9 @@ class EditSchedule extends EditRecord
     {
         try {
             DB::transaction(function () {
-                $this->validateScheduleWindow();
+                $this->validateScheduleWindow(
+                    $this->data['id_classes'] ?? $this->record->classes()->pluck('classes.id')->all(),
+                );
 
                 $this->checkScheduleConflictsAndAvailability($this->data, $this->record?->id);
                 $this->validateSelectedClassesBelongToRoomBuilding(
@@ -194,5 +197,4 @@ class EditSchedule extends EditRecord
             ]),
         ];
     }
-
 }

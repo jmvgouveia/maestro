@@ -20,13 +20,13 @@ trait HasSchoolYearHistory
     /** @return Collection<int, string> */
     public static function schoolYearOptions(): Collection
     {
-        $activeStartDate = SchoolYear::query()
+        $activeSchoolYear = SchoolYear::query()
             ->where('active', true)
-            ->value('start_date');
+            ->value('schoolyear');
 
         return SchoolYear::query()
-            ->when($activeStartDate, fn ($query) => $query->where('start_date', '<=', $activeStartDate))
-            ->orderByDesc('start_date')
+            ->when($activeSchoolYear, fn ($query) => $query->where('schoolyear', '<=', $activeSchoolYear))
+            ->orderByDesc('schoolyear')
             ->pluck('schoolyear', 'id');
     }
 

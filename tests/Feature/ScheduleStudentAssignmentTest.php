@@ -260,8 +260,12 @@ class ScheduleStudentAssignmentTest extends TestCase
 
         $schoolYearId = DB::table('schoolyears')->insertGetId([
             'schoolyear' => '2026/2027',
-            'start_date' => '2026-09-01',
-            'end_date' => '2027-08-31',
+            'start_date_especializado' => '2026-09-01',
+            'end_date_especializado' => '2027-08-31',
+            'start_date_profissional' => '2026-09-01',
+            'end_date_profissional' => '2027-08-31',
+            'start_date_livre' => '2026-09-01',
+            'end_date_livre' => '2027-08-31',
             'start_date_registration' => now()->subDay()->toDateString(),
             'end_date_registration' => now()->addDay()->toDateString(),
             'active' => true,
@@ -285,6 +289,7 @@ class ScheduleStudentAssignmentTest extends TestCase
 
         $courseId = DB::table('courses')->insertGetId([
             'name' => 'Music',
+            'type' => 'Especializado',
             'created_at' => $now,
             'updated_at' => $now,
         ]);

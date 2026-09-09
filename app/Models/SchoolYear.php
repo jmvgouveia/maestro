@@ -11,8 +11,12 @@ class SchoolYear extends Model
 
     protected $fillable = [
         'schoolyear',
-        'start_date',
-        'end_date',
+        'start_date_especializado',
+        'end_date_especializado',
+        'start_date_profissional',
+        'end_date_profissional',
+        'start_date_livre',
+        'end_date_livre',
         'start_date_registration',
         'end_date_registration',
         'active',

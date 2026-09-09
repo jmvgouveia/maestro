@@ -218,8 +218,12 @@ class SchoolYearHistoryResourcesTest extends TestCase
     {
         $newActive = SchoolYear::createWithExclusiveActive([
             'schoolyear' => '2027/2028',
-            'start_date' => '2027-09-01',
-            'end_date' => '2028-08-31',
+            'start_date_especializado' => '2027-09-01',
+            'end_date_especializado' => '2028-08-31',
+            'start_date_profissional' => '2027-09-01',
+            'end_date_profissional' => '2028-08-31',
+            'start_date_livre' => '2027-09-01',
+            'end_date_livre' => '2028-08-31',
             'active' => true,
         ]);
 
@@ -241,16 +245,24 @@ class SchoolYearHistoryResourcesTest extends TestCase
         $now = now();
         $this->historicalYearId = DB::table('schoolyears')->insertGetId([
             'schoolyear' => '2025/2026',
-            'start_date' => '2025-09-01',
-            'end_date' => '2026-08-31',
+            'start_date_especializado' => '2025-09-01',
+            'end_date_especializado' => '2026-08-31',
+            'start_date_profissional' => '2025-09-01',
+            'end_date_profissional' => '2026-08-31',
+            'start_date_livre' => '2025-09-01',
+            'end_date_livre' => '2026-08-31',
             'active' => false,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
         $this->activeYearId = DB::table('schoolyears')->insertGetId([
             'schoolyear' => '2026/2027',
-            'start_date' => '2026-09-01',
-            'end_date' => '2027-08-31',
+            'start_date_especializado' => '2026-09-01',
+            'end_date_especializado' => '2027-08-31',
+            'start_date_profissional' => '2026-09-01',
+            'end_date_profissional' => '2027-08-31',
+            'start_date_livre' => '2026-09-01',
+            'end_date_livre' => '2027-08-31',
             'active' => true,
             'created_at' => $now,
             'updated_at' => $now,

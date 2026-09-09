@@ -26,19 +26,24 @@ class CourseImporter extends Importer
                     Rule::unique(Course::class, 'name'),
                 ])
                 ->example('Licenciatura em Música'),
+            ImportColumn::make('type')
+                ->label('Tipologia')
+                ->rules(['required', 'string', Rule::in(array_keys(Course::types()))])
+                ->example('Profissional'),
         ];
     }
 
     public function resolveRecord(): ?Course
     {
         return DB::transaction(function () {
-            return new Course();
+            return new Course;
         });
     }
 
     protected function beforeFill(): void
     {
         $this->data['name'] = trim($this->data['name'] ?? '');
+        $this->data['type'] = trim($this->data['type'] ?? '');
     }
 
     public static function getCompletedNotificationBody(Import $import): string

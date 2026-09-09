@@ -3,12 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Course extends Model
 {
+    public static function types(): array
+    {
+        return [
+            'Especializado' => 'Especializado',
+            'Profissional' => 'Profissional',
+            'Livre' => 'Livre',
+        ];
+    }
+
     protected $fillable = [
         'name',
+        'type',
     ];
 
     public function subjects()

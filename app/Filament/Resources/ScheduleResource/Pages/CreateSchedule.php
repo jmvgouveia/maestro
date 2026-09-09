@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ScheduleResource\Pages;
 
+use App\Filament\Resources\Concerns\RedirectsToList;
 use App\Filament\Resources\ScheduleResource;
 use App\Filament\Resources\ScheduleResource\Traits\CheckScheduleWindow;
 use App\Filament\Resources\ScheduleResource\Traits\ChecksScheduleConflicts;
@@ -21,9 +22,8 @@ class CreateSchedule extends CreateRecord
 {
     protected static string $resource = ScheduleResource::class;
 
-    use \App\Filament\Resources\Concerns\RedirectsToList;
-
     use CheckScheduleWindow, ChecksScheduleConflicts, HandlesScheduleSwap, HourCounter, InteractsWithActions, ValidatesClassBuildings;
+    use RedirectsToList;
 
     protected $listeners = ['botaoSolicitarTrocaClicado' => 'onSolicitarTrocaClicado'];
 
@@ -52,7 +52,7 @@ class CreateSchedule extends CreateRecord
     protected function beforeCreate(): void
     {
         DB::transaction(function () {
-            $this->validateScheduleWindow();
+            $this->validateScheduleWindow($this->data['id_classes'] ?? []);
             $this->checkScheduleConflictsAndAvailability($this->data);
             $this->validateSelectedClassesBelongToRoomBuilding(
                 $this->data['id_classes'] ?? [],
@@ -63,7 +63,7 @@ class CreateSchedule extends CreateRecord
 
     protected function beforeSave(): void
     {
-        $this->validateScheduleWindow();
+        $this->validateScheduleWindow($this->data['id_classes'] ?? []);
         $this->checkScheduleConflictsAndAvailability($this->data, $this->record->id);
     }
 
@@ -94,5 +94,4 @@ class CreateSchedule extends CreateRecord
             'id_timeperiod' => request('timeperiod'),
         ]);
     }
-
 }

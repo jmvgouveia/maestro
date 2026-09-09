@@ -2,30 +2,30 @@
 
 namespace App\Filament\Resources\ScheduleRequestResource\Pages;
 
+use App\Filament\Resources\Concerns\RedirectsToList;
 use App\Filament\Resources\ScheduleRequestResource;
 use App\Filament\Resources\ScheduleResource\Traits\CheckScheduleWindow;
 use App\Filament\Resources\ScheduleResource\Traits\HourCounter;
+use App\Helpers\DatabaseHelper as DBHelper;
+use App\Helpers\MensagensErro as MSGErro;
+use App\Helpers\ScheduleRequestQueueHelper;
 use App\Models\Room;
 use Filament\Actions\Action;
-use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\DB;
-use App\Helpers\DatabaseHelper as DBHelper;
-use App\Helpers\MensagensErro as MSGErro;
-use App\Helpers\ScheduleRequestQueueHelper;
 
 class EditScheduleRequest extends EditRecord
 {
     protected static string $resource = ScheduleRequestResource::class;
 
-    use \App\Filament\Resources\Concerns\RedirectsToList;
-
     use CheckScheduleWindow, HourCounter;
+    use RedirectsToList;
 
     protected function getFormActions(): array
     {
@@ -64,13 +64,13 @@ class EditScheduleRequest extends EditRecord
                         redirect(request()->header('Referer') ?? url()->previous() ?? filament()->getUrl());
                     }
                 })
-                ->visible(fn() => $this->record->status !== 'Eliminado')
+                ->visible(fn () => $this->record->status !== 'Eliminado')
                 ->form([
 
                     Select::make('id_room_novo')
                         ->label('Sala Nova')
                         ->required()
-                        ->options(fn() => $this->getAvailableRooms()),
+                        ->options(fn () => $this->getAvailableRooms()),
                     Textarea::make('response')
                         ->label($isGestor ? 'Justificação da Aprovação (Gestor)' : 'Justificação da Aceitação')
                         ->required(),
@@ -90,7 +90,10 @@ class EditScheduleRequest extends EditRecord
                     }
 
                     DB::transaction(function () use ($data, $isGestor) {
-                        $this->validateScheduleWindow();
+                        $this->validateScheduleWindow(scheduleIds: [
+                            $this->record->id_schedule,
+                            $this->record->id_new_schedule,
+                        ]);
 
                         // $this->record->update([
                         //     'status' => $isGestor ? 'Aprovado DP' : 'Aprovado',
@@ -148,17 +151,17 @@ class EditScheduleRequest extends EditRecord
                             ->send();
 
                         Notification::make()
-                            ->title("Pedido aprovado")
+                            ->title('Pedido aprovado')
                             ->body("O professor {$ownername} aprovou o seu pedido para a troca da aula na sala {$currentRoom}, no {$dayName} às {$timePeriod}.")
                             ->success()
                             ->actions([
                                 NotificationAction::make('Ver Pedido')
                                     ->url(route('filament.admin.resources.schedule-requests.edit', [
                                         'record' => $this->record->getKey(),
-                                    ]))
+                                    ])),
                             ])
                             ->sendToDatabase($requester);
-                        //-----------NEW
+                        // -----------NEW
                     });
 
                     // return redirect($this->getResource()::getUrl('index'));
@@ -170,7 +173,7 @@ class EditScheduleRequest extends EditRecord
             $actions[] = Action::make('reject')
                 ->label('Recusar Troca')
                 ->color('danger')
-                ->visible(fn() => $this->record->status !== 'Eliminado')
+                ->visible(fn () => $this->record->status !== 'Eliminado')
                 ->mountUsing(function () {
                     if ($this->record->status === 'Eliminado') {
                         Notification::make()
@@ -200,7 +203,10 @@ class EditScheduleRequest extends EditRecord
                     }
 
                     DB::transaction(function () use ($data, $isGestor) {
-                        $this->validateScheduleWindow();
+                        $this->validateScheduleWindow(scheduleIds: [
+                            $this->record->id_schedule,
+                            $this->record->id_new_schedule,
+                        ]);
 
                         DBHelper::updateScheduleRequestData(
                             $this->record->id,
@@ -221,20 +227,20 @@ class EditScheduleRequest extends EditRecord
                         extract($this->getScheduleDetails());
 
                         Notification::make()
-                            ->title("Pedido de troca recusado")
+                            ->title('Pedido de troca recusado')
                             ->body("Recusou o pedido de {$requestername} para a aula na sala {$currentRoom}, no {$dayName} às {$timePeriod}.")
                             ->danger()
                             ->send();
 
                         Notification::make()
-                            ->title("Pedido recusado")
+                            ->title('Pedido recusado')
                             ->body("O professor {$ownername} recusou o seu pedido de troca da aula na sala {$currentRoom}, no {$dayName} às {$timePeriod}.")
                             ->danger()
                             ->actions([
                                 NotificationAction::make('Ver Pedido')
                                     ->url(route('filament.admin.resources.schedule-requests.edit', [
                                         'record' => $this->record->getKey(),
-                                    ]))
+                                    ])),
                             ])
                             ->sendToDatabase($requester);
                     });
@@ -247,7 +253,7 @@ class EditScheduleRequest extends EditRecord
         if (($isRequestOwner || $isGestor) && $status === 'Recusado') {
             $actions[] = Action::make('escalar')
                 ->label('Escalar Situação')
-                ->visible(fn() => $this->record->status !== 'Eliminado')
+                ->visible(fn () => $this->record->status !== 'Eliminado')
                 ->color('warning')
                 ->mountUsing(function () {
                     if ($this->record->status === 'Eliminado') {
@@ -277,7 +283,10 @@ class EditScheduleRequest extends EditRecord
                         return redirect(filament()->getUrl());
                     }
                     DB::transaction(function () use ($data) {
-                        $this->validateScheduleWindow();
+                        $this->validateScheduleWindow(scheduleIds: [
+                            $this->record->id_schedule,
+                            $this->record->id_new_schedule,
+                        ]);
 
                         DBHelper::updateScheduleRequestData(
                             $this->record->id,
@@ -300,30 +309,30 @@ class EditScheduleRequest extends EditRecord
                         Notification::make()
                             ->title('Pedido Escalado')
                             ->warning()
-                            ->body("O pedido foi escalado para análise superior.")
+                            ->body('O pedido foi escalado para análise superior.')
                             ->send();
 
                         Notification::make()
-                            ->title("Pedido de troca escalado")
+                            ->title('Pedido de troca escalado')
                             ->body("O professor {$requestername} escalou o pedido de troca da aula na sala {$currentRoom}, no {$dayName} às {$timePeriod}.")
                             ->warning()
                             ->actions([
                                 NotificationAction::make('Ver Pedido')
                                     ->url(route('filament.admin.resources.schedule-requests.edit', [
                                         'record' => $this->record->getKey(),
-                                    ]))
+                                    ])),
                             ])
                             ->sendToDatabase($owner);
 
                         Notification::make()
-                            ->title("Pedido escalado")
-                            ->body("O seu pedido de troca foi escalado para análise superior.")
+                            ->title('Pedido escalado')
+                            ->body('O seu pedido de troca foi escalado para análise superior.')
                             ->warning()
                             ->actions([
                                 NotificationAction::make('Ver Pedido')
                                     ->url(route('filament.admin.resources.schedule-requests.edit', [
                                         'record' => $this->record->getKey(),
-                                    ]))
+                                    ])),
                             ])
                             ->sendToDatabase($requester);
                     });
@@ -340,7 +349,7 @@ class EditScheduleRequest extends EditRecord
         $actions[] = DeleteAction::make()
             ->label('Eliminar Horário')
             ->color('danger')
-            ->visible(fn() => !in_array($this->record->status, ['Eliminado', 'Aprovado']))
+            ->visible(fn () => ! in_array($this->record->status, ['Eliminado', 'Aprovado']))
             ->requiresConfirmation()
             ->action(function () {
                 if ($this->record->status === 'Eliminado') {
@@ -376,21 +385,21 @@ class EditScheduleRequest extends EditRecord
                                     DBHelper::updateScheduleData(
                                         $deletedSchedule->id,
                                         [
-                                            'status' => 'Eliminado'
+                                            'status' => 'Eliminado',
                                         ],
                                         MSGErro::ERRO_ELIMINAR_SCHEDULE
                                     );
 
-                                    //$deletedSchedule->update(['status' => 'Eliminado']);
+                                    // $deletedSchedule->update(['status' => 'Eliminado']);
 
                                     DBHelper::updateScheduleRequestData(
                                         $scheduleRequest->id,
                                         [
-                                            'status' => 'Eliminado'
+                                            'status' => 'Eliminado',
                                         ],
                                         MSGErro::ERRO_ELIMINAR_SCHEDULE
                                     );
-                                    //$scheduleRequest->update(['status' => 'Eliminado']);
+                                    // $scheduleRequest->update(['status' => 'Eliminado']);
 
                                     Notification::make()
                                         ->title('Pedido cancelado')
@@ -413,7 +422,7 @@ class EditScheduleRequest extends EditRecord
                                         MSGErro::ERRO_ELIMINAR_SCHEDULE
                                     );
 
-                                    //--------NEW
+                                    // --------NEW
 
                                     // $deletedSchedule->update(['status' => 'Eliminado']);
 
@@ -504,12 +513,12 @@ class EditScheduleRequest extends EditRecord
                                     DBHelper::updateScheduleData(
                                         $deletedSchedule->id,
                                         [
-                                            'status' => 'Eliminado'
+                                            'status' => 'Eliminado',
                                         ],
                                         MSGErro::ERRO_ELIMINAR_SCHEDULE
                                     );
                                     // $deletedSchedule->update(['status' => 'Eliminado']);
-                                    //---new
+                                    // ---new
 
                                     Notification::make()
                                         ->title('Marcação eliminada')
@@ -572,7 +581,7 @@ class EditScheduleRequest extends EditRecord
                                         'Erro ao eliminar horário (Aprovado DP - conflito)'
                                     );
 
-                                    //--------NEW
+                                    // --------NEW
 
                                     //  $deletedSchedule->update(['status' => 'Eliminado']);
 
@@ -598,7 +607,7 @@ class EditScheduleRequest extends EditRecord
 
                                     // $scheduleRequest->update(['status' => 'Eliminado']);
 
-                                    //$scheduleNew->update(['status' => 'Aprovado']);
+                                    // $scheduleNew->update(['status' => 'Aprovado']);
 
                                     Notification::make()
                                         ->title('Troca aprovada')
@@ -633,7 +642,9 @@ class EditScheduleRequest extends EditRecord
     {
         $conflict = $this->record->scheduleConflict;
 
-        if (!$conflict) return [];
+        if (! $conflict) {
+            return [];
+        }
 
         return Room::where('id_building', $conflict->room?->id_building)
             ->whereDoesntHave('schedules', function ($query) use ($conflict) {
