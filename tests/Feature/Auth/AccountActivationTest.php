@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Livewire\Auth\ActivateAccount;
 use App\Models\User;
+use App\Notifications\UserActivationNotification;
 use App\Services\UserActivationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +15,15 @@ use Tests\TestCase;
 class AccountActivationTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_activation_email_uses_a_png_logo_supported_by_email_clients(): void
+    {
+        $user = User::factory()->create();
+        $html = (new UserActivationNotification($user, 'token'))->toMail($user)->render();
+
+        $this->assertStringContainsString('images/maestro-logo-light.png', $html);
+        $this->assertStringNotContainsString('images/maestro-logo-light.svg', $html);
+    }
 
     public function test_activation_sets_password_and_preserves_multiple_roles(): void
     {

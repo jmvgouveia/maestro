@@ -139,6 +139,9 @@ protegido server-side durante a edição. Foram criadas as permissões da `Área
 Pedagógica` e ampliadas as da `Secretaria`, incluindo `RegistrationSubject`.
 O perfil independente `Horário Sobreposto` permite acesso global ao calendário
 sem restrição por departamento ou edifício.
+O cabeçalho dos emails de ativação usa agora `maestro-logo-light.png` em vez de
+SVG, por compatibilidade com clientes de email; existe teste dedicado para o
+template renderizado.
 
 ## Open Issues
 
