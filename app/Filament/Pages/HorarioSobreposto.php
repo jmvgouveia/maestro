@@ -40,7 +40,7 @@ class HorarioSobreposto extends Page
 
         return $user instanceof User
             && (
-                $user->hasRole('Super Admin')
+                static::hasUnrestrictedAccess($user)
                 || static::userHasDepartmentCoordinatorPosition($user)
                 || static::userHasBuildingCoordinatorPosition($user)
             );
@@ -100,7 +100,7 @@ class HorarioSobreposto extends Page
         $activeSchoolYearId = SchoolYear::query()->where('active', true)->value('id');
         $query = Teacher::query();
 
-        if ($user instanceof User && $user->hasRole('Super Admin')) {
+        if ($user instanceof User && static::hasUnrestrictedAccess($user)) {
             return $activeSchoolYearId
                 ? $query->whereHas('schedules', fn ($scheduleQuery) => $scheduleQuery
                     ->where('id_schoolyear', $activeSchoolYearId)
@@ -144,7 +144,7 @@ class HorarioSobreposto extends Page
         $user = Filament::auth()->user();
         $teacherIds ??= $this->allowedTeacherIds();
 
-        if ($user instanceof User && $user->hasRole('Super Admin')) {
+        if ($user instanceof User && static::hasUnrestrictedAccess($user)) {
             return array_fill_keys($teacherIds, null);
         }
 
@@ -164,6 +164,12 @@ class HorarioSobreposto extends Page
                     : $buildingIds,
             ])
             ->all();
+    }
+
+    protected static function hasUnrestrictedAccess(User $user): bool
+    {
+        return $user->hasRole('Super Admin')
+            || $user->checkPermissionTo('view unrestricted merged schedule');
     }
 
     protected static function coordinatorBuildingIds(User $user): array

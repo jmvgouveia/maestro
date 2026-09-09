@@ -17,10 +17,10 @@ class Classes extends Model
         return $this->belongsTo(Course::class, 'id_course');
     }
 
-    /* public function registration()
+    public function registrations()
     {
         return $this->hasMany(Registration::class, 'id_class');
-    } */
+    }
 
     public function classes()
     {

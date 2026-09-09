@@ -134,8 +134,11 @@ isolamento do calendário por edifício; a suite completa passou com 103 testes 
 Foi corrigida a visibilidade do menu para cargos sem associação ainda configurada
 e foram aceites as duas grafias de `Polo/Núcleo` observadas nos dados.
 O papel `Recursos Humanos` passou a ter permissões de consulta e edição de
-docentes; o email do utilizador associado fica bloqueado na UI e protegido
-server-side durante a edição.
+docentes e utilizadores; o email do utilizador associado fica bloqueado na UI e
+protegido server-side durante a edição. Foram criadas as permissões da `Área
+Pedagógica` e ampliadas as da `Secretaria`, incluindo `RegistrationSubject`.
+O perfil independente `Horário Sobreposto` permite acesso global ao calendário
+sem restrição por departamento ou edifício.
 
 ## Open Issues
 

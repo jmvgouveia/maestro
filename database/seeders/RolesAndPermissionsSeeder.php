@@ -29,12 +29,50 @@ class RolesAndPermissionsSeeder extends Seeder
             'view-any ScheduleRequest',
             'update ScheduleRequest',
             'manage user activation',
+            'view unrestricted merged schedule',
         ];
 
         $secretariaPermissions = [
+            'view Student', 'view-any Student', 'create Student', 'update Student', 'delete Student', 'delete-any Student',
             'view Registration', 'view-any Registration', 'create Registration', 'update Registration', 'delete Registration', 'delete-any Registration',
+            'view RegistrationSubject', 'view-any RegistrationSubject', 'create RegistrationSubject', 'update RegistrationSubject', 'delete RegistrationSubject', 'delete-any RegistrationSubject',
+            'view Course', 'view-any Course',
+            'view Classes', 'view-any Classes',
+            'view Subject', 'view-any Subject',
             'view TeacherSubject', 'view-any TeacherSubject', 'create TeacherSubject', 'update TeacherSubject', 'delete TeacherSubject', 'delete-any TeacherSubject',
             'view CourseSubject', 'view-any CourseSubject', 'create CourseSubject', 'update CourseSubject', 'delete CourseSubject', 'delete-any CourseSubject',
+        ];
+
+        $areaPedagogicaPermissions = [
+            'view Course', 'view-any Course',
+            'view CourseSubject', 'view-any CourseSubject',
+            'view Subject', 'view-any Subject',
+            'view Classes', 'view-any Classes',
+            'view Student', 'view-any Student',
+            'view Registration', 'view-any Registration',
+            'view Teacher', 'view-any Teacher',
+            'view TeacherSubject', 'view-any TeacherSubject',
+            'view Schedule', 'view-any Schedule',
+            'view Room', 'view-any Room',
+            'view Building', 'view-any Building',
+            'view Timeperiod', 'view-any Timeperiod',
+            'view Weekday', 'view-any Weekday',
+            'view SchoolYear', 'view-any SchoolYear',
+            'view Department', 'view-any Department',
+            'view ScheduleRequest', 'view-any ScheduleRequest',
+            'create Course', 'update Course',
+            'create CourseSubject', 'update CourseSubject',
+            'create Subject', 'update Subject',
+            'create Classes', 'update Classes',
+            'create TeacherSubject', 'update TeacherSubject',
+            'create Schedule', 'update Schedule',
+            'delete Schedule', 'delete-any Schedule',
+        ];
+
+        $recursosHumanosPermissions = [
+            'view Teacher', 'view-any Teacher', 'create Teacher', 'update Teacher',
+            'view User', 'view-any User', 'create User', 'update User',
+            'manage user activation',
         ];
 
         $resourcePermissions = [];
@@ -44,7 +82,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'ProfessionalRelationship', 'Qualification', 'Registration', 'Role',
             'Room', 'RoomBlockedHours', 'SalaryScale', 'Schedule', 'ScheduleRequest',
             'SchoolYear', 'Student', 'Subject', 'Teacher', 'TeacherHourCounter',
-            'TeacherSubject', 'TimeReduction', 'Timeperiod', 'User', 'Weekday', 'EmailAudit',
+            'TeacherSubject', 'RegistrationSubject', 'TimeReduction', 'Timeperiod', 'User', 'Weekday', 'EmailAudit',
         ] as $model) {
             foreach (['view', 'view-any', 'create', 'update', 'delete', 'delete-any', 'restore', 'restore-any', 'replicate', 'reorder', 'force-delete', 'force-delete-any'] as $ability) {
                 $resourcePermissions[] = "{$ability} {$model}";
@@ -78,16 +116,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 'update ScheduleRequest',
                 'aprovar trocas',
             ],
-            'Recursos Humanos' => [
-                'view_any_user',
-                'create_user',
-                'update_user',
-                'delete_user',
-                'view Teacher',
-                'view-any Teacher',
-                'update Teacher',
-                'manage user activation',
+            'Área Pedagógica' => $areaPedagogicaPermissions,
+            'Horário Sobreposto' => [
+                'view unrestricted merged schedule',
             ],
+            'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
             'Secretaria' => $secretariaPermissions,
         ];
