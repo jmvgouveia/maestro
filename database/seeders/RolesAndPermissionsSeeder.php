@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
         // Limpar o cache de permissões
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // 🔧 Permissões fixas manuais (não ligadas a resources)
         $customPermissions = [
@@ -43,7 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'ProfessionalRelationship', 'Qualification', 'Registration', 'Role',
             'Room', 'RoomBlockedHours', 'SalaryScale', 'Schedule', 'ScheduleRequest',
             'SchoolYear', 'Student', 'Subject', 'Teacher', 'TeacherHourCounter',
-             'TeacherSubject', 'TimeReduction', 'Timeperiod', 'User', 'Weekday', 'EmailAudit',
+            'TeacherSubject', 'TimeReduction', 'Timeperiod', 'User', 'Weekday', 'EmailAudit',
         ] as $model) {
             foreach (['view', 'view-any', 'create', 'update', 'delete', 'delete-any', 'restore', 'restore-any', 'replicate', 'reorder', 'force-delete', 'force-delete-any'] as $ability) {
                 $resourcePermissions[] = "{$ability} {$model}";
@@ -69,8 +70,12 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view teacher students',
             ],
             'Gestor Conflitos' => [
-                'view_any_schedule',
-                'view_schedule',
+                'view Schedule',
+                'view-any Schedule',
+                'update Schedule',
+                'view ScheduleRequest',
+                'view-any ScheduleRequest',
+                'update ScheduleRequest',
                 'aprovar trocas',
             ],
             'Recursos Humanos' => [
@@ -97,7 +102,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // 👤 Atribuir Super Admin ao primeiro utilizador (opcional)
         $user = User::first();
-        if ($user && !$user->hasRole('Super Admin')) {
+        if ($user && ! $user->hasRole('Super Admin')) {
             $user->assignRole('Super Admin');
         }
     }

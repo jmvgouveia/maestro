@@ -9,23 +9,23 @@ use App\Models\Teacher;
 use App\Models\User;
 use Carbon\Carbon;
 use Filament\Facades\Filament;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class ScheduleConflictResource extends Resource
 {
     protected static ?string $model = ScheduleRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
     protected static ?string $navigationGroup = 'Horários';
+
     protected static ?string $navigationLabel = 'Gestão de Conflitos';
 
     public static function shouldRegisterNavigation(): bool
@@ -43,7 +43,6 @@ class ScheduleConflictResource extends Resource
         return 'Gestão de Conflitos de Horário';
     }
 
-
     public static function getEloquentQuery(): Builder
     {
         $user = Filament::auth()->user();
@@ -55,13 +54,9 @@ class ScheduleConflictResource extends Resource
             return parent::getEloquentQuery()->whereRaw('0 = 1');
         }
 
-        // Estados válidos para visualização
-        $estadosVisiveis = ['Escalado', 'Aprovado DP', 'Recusado DP'];
-
-        // Gestor de conflito: vê tudo do ano letivo ativo com os estados definidos
+        // Gestor de conflito: vê todos os pedidos do ano letivo ativo.
         if ($user instanceof User && $user->hasRole('Gestor Conflitos')) {
             return parent::getEloquentQuery()
-                ->whereIn('status', $estadosVisiveis)
                 ->where(function ($query) use ($anoLetivoAtivo) {
                     $query
                         ->whereHas('scheduleNew', function ($q) use ($anoLetivoAtivo) {
@@ -72,6 +67,8 @@ class ScheduleConflictResource extends Resource
                         });
                 });
         }
+
+        $estadosVisiveis = ['Escalado', 'Aprovado DP', 'Recusado DP'];
 
         // Professor: vê apenas os seus pedidos com os estados e ano letivo ativos
         if (! $teacher) {
@@ -99,7 +96,6 @@ class ScheduleConflictResource extends Resource
             });
     }
 
-
     public static function form(Form $form): Form
     {
 
@@ -111,19 +107,19 @@ class ScheduleConflictResource extends Resource
                 ->schema([
                     Placeholder::make('professor_original')
                         ->label('Marcado por:')
-                        ->content(fn($record) => $record->scheduleConflict->teacher->name ?? '—'),
+                        ->content(fn ($record) => $record->scheduleConflict->teacher->name ?? '—'),
 
                     Placeholder::make('sala')
                         ->label('Sala')
-                        ->content(fn($record) => $record->scheduleConflict->room->name ?? '—'),
+                        ->content(fn ($record) => $record->scheduleConflict->room->name ?? '—'),
 
                     Placeholder::make('dia')
                         ->label('Dia da Semana')
-                        ->content(fn($record) => $record->scheduleConflict->weekday->weekday ?? '—'),
+                        ->content(fn ($record) => $record->scheduleConflict->weekday->weekday ?? '—'),
 
                     Placeholder::make('hora')
                         ->label('Hora')
-                        ->content(fn($record) => $record->scheduleConflict->timePeriod->description ?? '—'),
+                        ->content(fn ($record) => $record->scheduleConflict->timePeriod->description ?? '—'),
                 ])
                 ->columns(2),
 
@@ -134,15 +130,15 @@ class ScheduleConflictResource extends Resource
                 ->schema([
                     Placeholder::make('solicitante')
                         ->label('Pedido por:')
-                        ->content(fn($record) => $record->requester->name ?? '—'),
+                        ->content(fn ($record) => $record->requester->name ?? '—'),
 
                     Placeholder::make('data_pedido')
                         ->label('Data do Pedido')
-                        ->content(fn($record) => optional($record->created_at)->format('d/m/Y H:i') ?? '—'),
+                        ->content(fn ($record) => optional($record->created_at)->format('d/m/Y H:i') ?? '—'),
 
                     Placeholder::make('justification')
                         ->label('Justificação do Pedido: ')
-                        ->content(fn($record) => $record->justification ?? '—')
+                        ->content(fn ($record) => $record->justification ?? '—')
                         ->columnSpanFull(),
                 ])
                 ->columns(2),
@@ -154,23 +150,20 @@ class ScheduleConflictResource extends Resource
                 ->schema([
                     Placeholder::make('professor_respondeu')
                         ->label('Resposta de:')
-                        ->content(fn($record) => $record->scheduleConflict->teacher->name ?? '—'),
+                        ->content(fn ($record) => $record->scheduleConflict->teacher->name ?? '—'),
 
                     Placeholder::make('responded_at')
                         ->label('Data da Resposta')
-                        ->content(fn($record) => $record->responded_at
+                        ->content(fn ($record) => $record->responded_at
                             ? Carbon::parse($record->responded_at)->format('d/m/Y H:i')
                             : '—'),
 
-
-
                     Placeholder::make('response')
                         ->label('Resposta:')
-                        ->content(fn($record) => $record->response ?? '—')
+                        ->content(fn ($record) => $record->response ?? '—')
                         ->columnSpanFull(),
                 ])
                 ->columns(2),
-
 
             Section::make('🔴 Situação Escalada para Direção Pedagógica')
                 ->collapsible()
@@ -180,29 +173,27 @@ class ScheduleConflictResource extends Resource
 
                     Placeholder::make('solicitante')
                         ->label('Pedido feito por:')
-                        ->content(fn($record) => $record->requester->name ?? '—'),
-
+                        ->content(fn ($record) => $record->requester->name ?? '—'),
 
                     Placeholder::make('justification_at')
                         ->label('Data da Resposta')
-                        ->content(fn($record) => $record->justification_at
+                        ->content(fn ($record) => $record->justification_at
                             ? Carbon::parse($record->justification_at)->format('d/m/Y H:i')
                             : '—'),
 
                     Placeholder::make('justification_escalada')
                         ->label('Justificação para Escalada')
-                        ->content(fn($record) => $record->scaled_justification ?? '—')
-                        ->visible(fn($record) => $record->status === 'Escalado')
+                        ->content(fn ($record) => $record->scaled_justification ?? '—')
+                        ->visible(fn ($record) => $record->status === 'Escalado')
                         ->columnSpanFull(),
 
                     Placeholder::make('response_coord')
                         ->label('Justificação para Escalada')
-                        ->content(fn($record) => $record->response_coord ?? '—')
-                        ->visible(fn($record) => $record->status === 'Aprovado DP' || $record->status === 'Recusado DP')
+                        ->content(fn ($record) => $record->response_coord ?? '—')
+                        ->visible(fn ($record) => $record->status === 'Aprovado DP' || $record->status === 'Recusado DP')
                         ->columnSpanFull(),
                 ])
                 ->columns(2),
-
 
         ]);
     }
@@ -212,7 +203,7 @@ class ScheduleConflictResource extends Resource
 
         return $table
             ->columns([
-                textColumn::make('created_at')
+                TextColumn::make('created_at')
                     ->label('Data do Pedido')
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
@@ -258,7 +249,7 @@ class ScheduleConflictResource extends Resource
                 TextColumn::make('status')
                     ->label('Estado')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'Pendente' => 'warning',
                         'Aprovado' => 'success',
                         'Recusado' => 'danger',
@@ -280,7 +271,7 @@ class ScheduleConflictResource extends Resource
                         'Escalado' => 'Escalado',
                         'Aprovado DP' => 'Aprovado DP',
                         'Recusado DP' => 'Recusado DP',
-                    ])
+                    ]),
 
             ])
             ->actions([])

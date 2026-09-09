@@ -4,11 +4,13 @@ namespace Tests\Feature\Security;
 
 use App\Filament\Resources\ScheduleResource;
 use App\Models\Schedule;
+use App\Models\ScheduleRequest;
 use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Policies\SchedulePolicy;
+use App\Policies\ScheduleRequestPolicy;
 use App\Policies\StudentPolicy;
 use App\Policies\TeacherPolicy;
 use App\Policies\UserPolicy;
@@ -75,6 +77,29 @@ class AuthorizationTest extends TestCase
 
         $this->assertTrue((new TeacherPolicy)->view($user, new Teacher(['id_user' => 999])));
         $this->assertTrue((new StudentPolicy)->update($user, new Student(['user_id' => 999])));
+    }
+
+    public function test_conflict_manager_can_view_schedules_and_all_schedule_requests(): void
+    {
+        $user = User::factory()->create();
+        $role = Role::findOrCreate('Gestor Conflitos');
+        $user->assignRole($role);
+        $permissions = [
+            'view Schedule',
+            'view-any Schedule',
+            'update Schedule',
+            'view ScheduleRequest',
+            'view-any ScheduleRequest',
+            'update ScheduleRequest',
+        ];
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission);
+        }
+        $user->givePermissionTo($permissions);
+
+        $this->assertTrue((new SchedulePolicy)->viewAny($user));
+        $this->assertTrue((new ScheduleRequestPolicy)->viewAny($user));
+        $this->assertTrue((new ScheduleRequestPolicy)->update($user, new ScheduleRequest));
     }
 
     public function test_professor_schedule_access_is_limited_to_own_teacher(): void
