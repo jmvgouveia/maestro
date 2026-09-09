@@ -12,9 +12,7 @@ class UserActivationNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(private readonly User $user, private readonly string $token)
-    {
-    }
+    public function __construct(private readonly User $user, private readonly string $token) {}
 
     public function via(object $notifiable): array
     {

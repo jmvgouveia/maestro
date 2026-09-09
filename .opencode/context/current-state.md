@@ -139,9 +139,10 @@ protegido server-side durante a edição. Foram criadas as permissões da `Área
 Pedagógica` e ampliadas as da `Secretaria`, incluindo `RegistrationSubject`.
 O perfil independente `Horário Sobreposto` permite acesso global ao calendário
 sem restrição por departamento ou edifício.
-O cabeçalho dos emails de ativação usa agora `maestro-logo-light.png` em vez de
-SVG, por compatibilidade com clientes de email; existe teste dedicado para o
-template renderizado.
+O cabeçalho dos emails de ativação usa agora o PNG `maestro-logo-light.png` por
+URL pública HTTPS, sem parte MIME/anexo. As dimensões de apresentação respeitam
+a proporção real do PNG (220x154), evitando deformação. O teste dedicado valida
+o HTML sem anexos.
 
 ## Open Issues
 
@@ -167,6 +168,8 @@ Teste de navegacao docente: 9 passaram (28 assertions).
 Teste de importacao de periodos: 19 passaram (85 assertions) no conjunto focado.
 Teste de fila de pedidos: 4 passaram (9 assertions) no DDEV.
 `git diff --check` passou.
+O teste de ativação de conta passou com 3 testes e 13 asserções após a correção
+do logo inline; Pint passou nos dois ficheiros PHP alterados.
 Migration `2026_09_09_120001_create_teacher_coordinator_buildings_table` aplicada
 no DDEV; Pint e a suite completa passaram após a alteração.
 

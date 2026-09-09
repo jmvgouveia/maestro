@@ -8,6 +8,7 @@ use App\Notifications\UserActivationNotification;
 use App\Services\UserActivationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -16,12 +17,14 @@ class AccountActivationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_activation_email_uses_a_png_logo_supported_by_email_clients(): void
+    public function test_activation_email_uses_a_public_png_logo_without_attachments(): void
     {
         $user = User::factory()->create();
-        $html = (new UserActivationNotification($user, 'token'))->toMail($user)->render();
+        $mail = (new UserActivationNotification($user, 'token'))->toMail($user);
+        $html = (string) $mail->render();
 
         $this->assertStringContainsString('images/maestro-logo-light.png', $html);
+        $this->assertStringContainsString('width="220" height="154"', $html);
         $this->assertStringNotContainsString('images/maestro-logo-light.svg', $html);
     }
 
@@ -60,7 +63,7 @@ class AccountActivationTest extends TestCase
         $newToken = $service->issue($user);
 
         $this->assertNotSame($oldToken, $newToken);
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
         $service->activate($oldToken, $user->email, 'New-password-123!');
     }
 }
