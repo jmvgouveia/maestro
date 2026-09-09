@@ -147,6 +147,21 @@ dedicado valida o HTML sem anexos.
 O tema HTML de email foi simplificado para maior compatibilidade com Outlook e
 clientes antigos, removendo propriedades CSS não essenciais como `position`,
 `box-sizing`, `vw`, `float`, sombras e raios de borda.
+Foi criado o widget `ScheduleWindowsWidget` no dashboard: Professores veem as
+três janelas por tipologia e Alunos veem a janela de inscrição, com estados
+Aberto, Ainda não começou, Encerrado ou Não configurado e indicação relativa da
+data. A cobertura dedicada passou.
+Foi criado o widget administrativo `SchoolYearReadinessWidget`, com checklist do
+ano letivo ativo, datas de marcação, tipologia dos cursos, períodos horários,
+edifícios das turmas e disciplinas dos cursos. Mostra estados Concluído,
+Atenção e Bloqueante para Super Admin, Secretaria e Área Pedagógica.
+O checklist inclui também alunos sem matrícula no ano ativo e professores sem
+disciplinas atribuídas, ambos classificados como Atenção. A cobertura dedicada
+foi atualizada e passou.
+A página Ajuda passou a carregar artigos publicados da tabela `help_articles`,
+filtrados server-side por público (`todos`, `aluno`, `professor`,
+`administrativo`). Foi criado o recurso Filament de gestão exclusiva do Super
+Admin, migration, permissões, seeder idempotente e cinco artigos iniciais.
 
 ## Open Issues
 

@@ -82,7 +82,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'ProfessionalRelationship', 'Qualification', 'Registration', 'Role',
             'Room', 'RoomBlockedHours', 'SalaryScale', 'Schedule', 'ScheduleRequest',
             'SchoolYear', 'Student', 'Subject', 'Teacher', 'TeacherHourCounter',
-            'TeacherSubject', 'RegistrationSubject', 'TimeReduction', 'Timeperiod', 'User', 'Weekday', 'EmailAudit',
+            'TeacherSubject', 'RegistrationSubject', 'TimeReduction', 'Timeperiod', 'User', 'Weekday', 'EmailAudit', 'HelpArticle',
         ] as $model) {
             foreach (['view', 'view-any', 'create', 'update', 'delete', 'delete-any', 'restore', 'restore-any', 'replicate', 'reorder', 'force-delete', 'force-delete-any'] as $ability) {
                 $resourcePermissions[] = "{$ability} {$model}";

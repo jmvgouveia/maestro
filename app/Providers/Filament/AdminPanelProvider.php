@@ -3,17 +3,19 @@
 namespace App\Providers\Filament;
 
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\MfaSetup;
 use App\Filament\Pages\MyAccount;
-use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\BuildingsOverview;
+use App\Filament\Widgets\MfaGracePeriodNotice;
+use App\Filament\Widgets\ScheduleWindowsWidget;
+use App\Filament\Widgets\SchoolYearReadinessWidget;
 use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\StatsOverviewAP;
 use App\Filament\Widgets\StatsOverviewRH;
 use App\Filament\Widgets\StudentsOverview;
 use App\Filament\Widgets\TeachersOverview;
-use App\Filament\Widgets\MfaGracePeriodNotice;
 use App\Http\Middleware\EnforceMfa;
 use App\Http\Middleware\EnforceReadOnlyImpersonation;
 use Filament\Facades\Filament;
@@ -69,7 +71,7 @@ class AdminPanelProvider extends PanelProvider
             ->assets([
                 Css::make(
                     'maestro',
-                    secure_asset('css/maestro.css') . '?v=' . filemtime(public_path('css/maestro.css'))
+                    secure_asset('css/maestro.css').'?v='.filemtime(public_path('css/maestro.css'))
                 ),
                 Js::make(
                     'maestro-charts',
@@ -93,6 +95,8 @@ class AdminPanelProvider extends PanelProvider
             //   ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 MfaGracePeriodNotice::class,
+                ScheduleWindowsWidget::class,
+                SchoolYearReadinessWidget::class,
                 StatsOverviewAP::class,
                 StatsOverviewRH::class,
                 StatsOverview::class,
@@ -121,7 +125,7 @@ class AdminPanelProvider extends PanelProvider
             ], isPersistent: true)
             ->plugin(FilamentSpatieRolesPermissionsPlugin::make())
             ->sidebarFullyCollapsibleOnDesktop()
-           ->brandName('MAESTRO')
+            ->brandName('MAESTRO')
             ->brandLogo(secure_asset('images/maestro-logo-light.svg'))
             ->darkModeBrandLogo(secure_asset('images/maestro-logo-dark.svg'))
             ->brandLogoHeight(fn (): string => request()->is('maestro/login') ? '10rem' : '2.625rem')
