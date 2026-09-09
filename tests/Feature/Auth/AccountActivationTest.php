@@ -23,8 +23,8 @@ class AccountActivationTest extends TestCase
         $mail = (new UserActivationNotification($user, 'token'))->toMail($user);
         $html = (string) $mail->render();
 
-        $this->assertStringContainsString('images/maestro-logo-light.png', $html);
-        $this->assertStringContainsString('width="220" height="154"', $html);
+        $this->assertStringContainsString('https://conservatorioescoladasartes.com/maestro-logo-light.png', $html);
+        $this->assertStringContainsString('width="220" height="108"', $html);
         $this->assertStringNotContainsString('images/maestro-logo-light.svg', $html);
     }
 

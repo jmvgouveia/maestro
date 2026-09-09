@@ -139,10 +139,11 @@ protegido server-side durante a edição. Foram criadas as permissões da `Área
 Pedagógica` e ampliadas as da `Secretaria`, incluindo `RegistrationSubject`.
 O perfil independente `Horário Sobreposto` permite acesso global ao calendário
 sem restrição por departamento ou edifício.
-O cabeçalho dos emails de ativação usa agora o PNG `maestro-logo-light.png` por
-URL pública HTTPS, sem parte MIME/anexo. As dimensões de apresentação respeitam
-a proporção real do PNG (220x154), evitando deformação. O teste dedicado valida
-o HTML sem anexos.
+O cabeçalho dos emails de ativação usa agora o PNG por URL pública HTTPS em
+`https://conservatorioescoladasartes.com/maestro-logo-light.png`, sem parte
+MIME/anexo. As dimensões de apresentação respeitam a proporção real do PNG
+(220x108 para o ficheiro público 3730x1824), evitando deformação. O teste
+dedicado valida o HTML sem anexos.
 
 ## Open Issues
 
