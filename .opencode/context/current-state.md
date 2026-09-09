@@ -144,6 +144,9 @@ O cabeçalho dos emails de ativação usa agora o PNG por URL pública HTTPS em
 MIME/anexo. As dimensões de apresentação respeitam a proporção real do PNG
 (220x108 para o ficheiro público 3730x1824), evitando deformação. O teste
 dedicado valida o HTML sem anexos.
+O tema HTML de email foi simplificado para maior compatibilidade com Outlook e
+clientes antigos, removendo propriedades CSS não essenciais como `position`,
+`box-sizing`, `vw`, `float`, sombras e raios de borda.
 
 ## Open Issues
 
