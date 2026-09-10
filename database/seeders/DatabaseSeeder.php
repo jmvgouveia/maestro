@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             HelpArticleSeeder::class,
             QualificationSeeder::class,
+            DemoDataSeeder::class,
         ]);
 
         User::factory()->create([

@@ -20,7 +20,7 @@ class CourseSubjectResource extends Resource
     use HasSchoolYearHistory;
     protected static ?string $model = CourseSubject::class;
 
-    protected static ?string $navigationGroup = 'Académico';
+    protected static ?string $navigationGroup = 'Gestão Pedagógica';
     protected static ?string $navigationLabel = 'Disciplinas - Curso';
     protected static ?string $navigationIcon = 'heroicon-s-clipboard-document-check';
     protected static ?int $navigationSort = 4;

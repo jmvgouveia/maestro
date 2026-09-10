@@ -25,7 +25,7 @@ class RegistrationResource extends Resource
     use \App\Filament\Concerns\HasSchoolYearHistory;
     protected static ?string $model = Registration::class;
 
-    protected static ?string $navigationGroup = 'Académico';
+    protected static ?string $navigationGroup = 'Gestão Pedagógica';
     protected static ?string $navigationLabel = 'Matrículas';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?int $navigationSort = 2;
@@ -88,7 +88,20 @@ class RegistrationResource extends Resource
                     ->options(function (callable $get) {
                         $courseId = $get('id_course');
                         if (!$courseId) return [];
-                        return Classes::where('id_course', $courseId)->pluck('name', 'id');
+
+                        return Classes::where('id_course', $courseId)
+                            ->get()
+                            ->sortBy(function (Classes $class): string {
+                                preg_match('/^(.*?)(\d+)\s*$/u', trim($class->name), $matches);
+
+                                return sprintf(
+                                    '%s%05d%s',
+                                    mb_strtolower(trim($matches[1] ?? $class->name)),
+                                    (int) ($matches[2] ?? 0),
+                                    mb_strtolower($class->name),
+                                );
+                            })
+                            ->mapWithKeys(fn (Classes $class): array => [$class->id => $class->name]);
                     })
                     ->disabled(function (callable $get) {
                         $courseId = $get('id_course');

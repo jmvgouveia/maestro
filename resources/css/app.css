@@ -47,6 +47,50 @@
     }
 }
 
+.public-auth-layout {
+    background: #f8fafc;
+    color: #172033;
+}
+
+.public-auth-card {
+    --color-accent: #063b82;
+    --color-accent-content: #063b82;
+    --color-accent-foreground: #ffffff;
+    border-top: 3px solid #ffbf00;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    border-left: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    background: #ffffff;
+    padding: 2.5rem 3rem;
+    box-shadow: 0 18px 40px rgb(6 59 130 / 8%);
+}
+
+@media (max-width: 640px) {
+    .public-auth-card {
+        padding: 2rem 1.25rem;
+    }
+}
+
+.public-auth-heading [data-flux-heading] {
+    color: #063b82;
+}
+
+.public-auth-button {
+    background: #063b82 !important;
+    color: #ffffff !important;
+}
+
+.public-auth-button:hover {
+    background: #052f68 !important;
+}
+
+.maestro-login-footer {
+    color: #64748b;
+    font-size: 0.65rem;
+    line-height: 1rem;
+}
+
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
 }

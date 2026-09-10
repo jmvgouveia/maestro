@@ -25,7 +25,7 @@ class TeacherStudentsResource extends Resource
     // ✅ 1 linha = 1 Aluno/Disciplina (pivot)
     protected static ?string $model = RegistrationSubject::class;
 
-    protected static ?string $navigationGroup = 'Académico';
+    protected static ?string $navigationGroup = 'Horários';
     protected static ?string $navigationLabel = 'Os meus Alunos';
     protected static ?string $navigationIcon  = 'heroicon-o-academic-cap';
     protected static ?int    $navigationSort  = 3;
@@ -82,8 +82,19 @@ class TeacherStudentsResource extends Resource
                         ->whereColumn('schedules.id_subject', 'registrations_subjects.id_subject')
                         ->where('schedules.id_teacher', $teacherId)
                         ->where('schedules.id_schoolyear', $activeYear->id)
-                        ->where('schedules.status', 'Aprovado');
-                });
+                         ->where('schedules.status', 'Aprovado');
+                 })->orWhereExists(function ($scheduleQuery) use ($teacherId, $activeYear) {
+                     // Horário criado para a turma inteira, sem pivot individual do aluno.
+                     $scheduleQuery->selectRaw('1')
+                         ->from('schedules')
+                          ->join('schedules_classes', 'schedules_classes.id_schedule', '=', 'schedules.id')
+                          ->join('registrations', 'registrations.id', '=', 'registrations_subjects.id_registration')
+                          ->whereColumn('schedules_classes.id_class', 'registrations.id_class')
+                         ->whereColumn('schedules.id_subject', 'registrations_subjects.id_subject')
+                         ->where('schedules.id_teacher', $teacherId)
+                         ->where('schedules.id_schoolyear', $activeYear->id)
+                         ->whereIn('schedules.status', ['Aprovado', 'Aprovado DP']);
+                 });
             })
             ->with([
                 'subject',
@@ -127,7 +138,19 @@ class TeacherStudentsResource extends Resource
                 $schedule = Schedule::query()
                     ->where('id_teacher', $teacherId)
                     ->where('id_subject', $subjectId)
-                    ->where('status', 'Aprovado')
+                    ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+                    ->whereHas('classes', fn($q) => $q->where('classes.id', $classId))
+                    ->orderBy('id')
+                    ->first();
+
+                if ($schedule && ! blank($schedule->shift)) {
+                    return (string) $schedule->shift;
+                }
+
+                $schedule = Schedule::query()
+                    ->where('id_teacher', $teacherId)
+                    ->where('id_subject', $subjectId)
+                    ->whereIn('status', ['Aprovado', 'Aprovado DP'])
                     ->whereHas('classes', fn($q) => $q->where('classes.id', $classId))
                     ->whereHas('students', fn($q) => $q->where('students.id', $studentId))
                     ->orderBy('id')
@@ -283,6 +306,18 @@ class TeacherStudentsResource extends Resource
                 && $schedule->id_subject === $subjectId
                 && $schedule->status === 'Aprovado'
                 && ! blank($schedule->shift)) {
+                return (string) $schedule->shift;
+            }
+
+            $schedule = Schedule::query()
+                ->where('id_teacher', $teacherId)
+                ->where('id_subject', $subjectId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+                ->whereHas('classes', fn($q) => $q->where('classes.id', $classId))
+                ->orderBy('id')
+                ->first();
+
+            if ($schedule && ! blank($schedule->shift)) {
                 return (string) $schedule->shift;
             }
 

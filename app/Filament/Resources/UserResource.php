@@ -19,6 +19,7 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
 
@@ -226,7 +227,14 @@ class UserResource extends Resource
                                 fclose($output);
                             }, 'codigos-ativacao.csv', ['Content-Type' => 'text/csv']);
                         }),
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->before(function (Tables\Actions\DeleteBulkAction $action): void {
+                            $currentUser = auth()->user();
+
+                            if ($currentUser && $action->getRecords()->contains(fn (User $record): bool => $currentUser->is($record))) {
+                                throw new AuthorizationException('Não pode eliminar o seu próprio utilizador.');
+                            }
+                        }),
                 ]),
             ]);
     }

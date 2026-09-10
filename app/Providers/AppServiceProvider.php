@@ -94,6 +94,14 @@ class AppServiceProvider extends ServiceProvider
                 return false;
             }
 
+            if (
+                $record instanceof User
+                && $user->is($record)
+                && in_array($ability, ['delete', 'forceDelete'], true)
+            ) {
+                return false;
+            }
+
             return $user->isSuperAdmin() ? true : null;
         });
 

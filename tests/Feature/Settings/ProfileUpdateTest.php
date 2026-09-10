@@ -6,6 +6,7 @@ use App\Livewire\Settings\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
@@ -86,5 +87,20 @@ class ProfileUpdateTest extends TestCase
         $response->assertHasErrors(['password']);
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_super_admin_cannot_delete_their_account(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(Role::findOrCreate('Super Admin'));
+
+        $this->actingAs($user);
+
+        Livewire::test('settings.delete-user-form')
+            ->set('password', 'password')
+            ->call('deleteUser');
+
+        $this->assertNotNull($user->fresh());
+        $this->assertTrue(auth()->check());
     }
 }

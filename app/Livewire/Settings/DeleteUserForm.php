@@ -3,6 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Livewire\Actions\Logout;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -15,6 +16,10 @@ class DeleteUserForm extends Component
      */
     public function deleteUser(Logout $logout): void
     {
+        if (Auth::user()?->isSuperAdmin()) {
+            throw new AuthorizationException('Um administrador não pode eliminar o próprio utilizador.');
+        }
+
         $this->validate([
             'password' => ['required', 'string', 'current_password'],
         ]);

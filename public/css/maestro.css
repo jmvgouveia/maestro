@@ -288,6 +288,119 @@
     line-height: 1rem;
 }
 
+/* Cartões de seleção de turno no modal do horário do aluno */
+.maestro-schedule-modal {
+    overflow: hidden;
+    border-top: 4px solid var(--maestro-accent) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 24px 60px rgb(6 59 130 / 18%) !important;
+}
+
+.maestro-schedule-modal .fi-modal-header {
+    border-bottom: 1px solid #e6edf5;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 72%);
+}
+
+.maestro-schedule-modal .fi-modal-heading {
+    color: var(--maestro-blue);
+    letter-spacing: -0.02em;
+}
+
+.schedule-shift-card {
+    overflow: hidden;
+    border: 1px solid #dbe4f0 !important;
+    border-left: 4px solid var(--maestro-blue) !important;
+    border-radius: 0.75rem !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 8px rgb(6 59 130 / 5%);
+}
+
+.schedule-shift-card .fi-section-header,
+.schedule-selection .fi-section-header {
+    border-bottom: 1px solid #e6edf5;
+    background: #f8fafc;
+}
+
+.schedule-shift-card .fi-section-header-heading,
+.schedule-selection .fi-section-header-heading {
+    color: var(--maestro-blue);
+    font-weight: 700;
+}
+
+.schedule-shift-card .fi-section-header-icon,
+.schedule-selection .fi-section-header-icon {
+    color: var(--maestro-accent);
+}
+
+.schedule-shift-card .fi-fo-field-wrp-label {
+    color: var(--maestro-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.schedule-shift-summary {
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    color: var(--maestro-blue);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    padding: 0.65rem 0.8rem;
+}
+
+.schedule-shift-summary-inner {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.75rem 2.5rem;
+}
+
+.schedule-shift-summary-inner > span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.55rem;
+}
+
+.schedule-shift-summary-inner b {
+    color: var(--maestro-secondary);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+}
+
+.schedule-shift-summary-inner strong {
+    color: var(--maestro-blue);
+}
+
+.schedule-slot {
+    border-left: 2px solid #ffbf00;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    color: var(--maestro-text);
+    padding: 0.7rem 0.9rem;
+}
+
+.schedule-slots {
+    border-color: #e6edf5 !important;
+    background: #ffffff;
+}
+
+.schedule-selection {
+    overflow: hidden;
+    border: 1px solid #dbe4f0 !important;
+    border-top: 3px solid var(--maestro-accent) !important;
+    border-radius: 0.75rem !important;
+    background: #ffffff !important;
+    box-shadow: 0 4px 14px rgb(6 59 130 / 6%);
+}
+
+.schedule-selection button:hover {
+    border-color: var(--maestro-blue) !important;
+    background: var(--maestro-blue) !important;
+    color: #ffffff !important;
+}
+
 /* Cores do modo escuro */
 .dark .fi-body,
 .dark .fi-main-ctn,

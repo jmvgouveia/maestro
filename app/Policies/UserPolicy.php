@@ -45,7 +45,7 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        return $user->checkPermissionTo('delete User');
+        return ! $user->is($model) && $user->checkPermissionTo('delete User');
     }
 
     /**
@@ -93,7 +93,7 @@ class UserPolicy
      */
     public function forceDelete(User $user, User $model): bool
     {
-        return $user->checkPermissionTo('force-delete User');
+        return ! $user->is($model) && $user->checkPermissionTo('force-delete User');
     }
 
     /**

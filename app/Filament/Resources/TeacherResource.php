@@ -25,7 +25,7 @@ class TeacherResource extends Resource
 {
     protected static ?string $model = Teacher::class;
 
-    protected static ?string $navigationGroup = 'Académico';
+    protected static ?string $navigationGroup = 'Gestão Pedagógica';
 
     protected static ?string $navigationLabel = 'Professores';
 

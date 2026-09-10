@@ -131,13 +131,19 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogoHeight(fn (): string => request()->is('maestro/login') ? '10rem' : '2.625rem')
             ->navigationGroups([
                 NavigationGroup::make()
-                    ->label('Académico'),
+                    ->label('Gestão Pedagógica'),
                 NavigationGroup::make()
                     ->label('Horários'),
                 NavigationGroup::make()
                     ->label('Recursos'),
                 NavigationGroup::make()
                     ->label('Administração')
+                    ->collapsible(),
+                NavigationGroup::make()
+                    ->label('Aluno')
+                    ->collapsible(),
+                NavigationGroup::make()
+                    ->label('Ajuda')
                     ->collapsible(),
             ])
             ->databaseNotifications()

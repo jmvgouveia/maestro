@@ -15,6 +15,17 @@ Foi implementado o bloqueio granular de lançamento de horários por tipologia d
 curso. As tipologias oficiais são `Especializado`, `Profissional` e `Livre`.
 Foi decidido aceitar temporariamente a limitação de não distinguir o mesmo
 aluno em duas inscrições da mesma disciplina no mesmo horário.
+Foi corrigida a autoeliminação de utilizadores administradores na Policy, no
+bypass de Super Admin, nas ações Filament e no formulário de eliminação de
+conta.
+Foi criada a página Filament `docentes-coordenacao`, uma consulta read-only de
+docentes para coordenadores, limitada ao ano letivo ativo e ao departamento
+e/ou polos/núcleos atribuídos, com filtros por disciplina e turma.
+A tabela mostra horas letivas aprovadas no formato aprovado/total disponível e
+separa as entradas pendentes.
+Na navegação do painel, o aluno tem agora o grupo `Aluno`, com `Horário` e
+`As minhas disciplinas`; os restantes recursos académicos ficam em `Gestão
+Pedagógica`.
 
 Tambem foi completado o importer de docentes com campos relacionais opcionais.
 Foi revista a fila de pedidos de troca e corrigido o importador de contadores de

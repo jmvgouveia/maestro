@@ -30,7 +30,7 @@ class TeacherSubjectResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return auth()->user()?->isTeacher() ? 'Horários' : 'Académico';
+        return auth()->user()?->isTeacher() ? 'Horários' : 'Gestão Pedagógica';
     }
 
     public static function getNavigationSort(): ?int
@@ -118,7 +118,11 @@ class TeacherSubjectResource extends Resource
                 TextColumn::make('subject.name')
                     ->label('Disciplina')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHas('subject', fn (Builder $subjectQuery): Builder => $subjectQuery
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('acronym', 'like', "%{$search}%"));
+                    }),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('id_schoolyear')

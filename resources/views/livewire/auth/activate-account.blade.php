@@ -1,8 +1,10 @@
 <div class="flex flex-col gap-6">
-    <x-auth-header
-        title="Ativar a sua conta"
-        description="Defina a sua palavra-passe para concluir o primeiro acesso"
-    />
+    <div class="public-auth-heading">
+        <x-auth-header
+            title="Ativar a sua conta"
+            description="Defina a sua palavra-passe para concluir o primeiro acesso"
+        />
+    </div>
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
@@ -42,7 +44,7 @@
         />
 
         <div class="flex items-center justify-end">
-            <flux:button type="submit" variant="primary" class="w-full">
+            <flux:button type="submit" variant="primary" class="public-auth-button w-full">
                 Ativar conta
             </flux:button>
         </div>

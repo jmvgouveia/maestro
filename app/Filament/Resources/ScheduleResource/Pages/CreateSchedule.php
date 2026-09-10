@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ScheduleResource\Pages;
 
-use App\Filament\Resources\Concerns\RedirectsToList;
+use App\Filament\Pages\MySchedule;
 use App\Filament\Resources\ScheduleResource;
 use App\Filament\Resources\ScheduleResource\Traits\CheckScheduleWindow;
 use App\Filament\Resources\ScheduleResource\Traits\ChecksScheduleConflicts;
@@ -23,7 +23,6 @@ class CreateSchedule extends CreateRecord
     protected static string $resource = ScheduleResource::class;
 
     use CheckScheduleWindow, ChecksScheduleConflicts, HandlesScheduleSwap, HourCounter, InteractsWithActions, ValidatesClassBuildings;
-    use RedirectsToList;
 
     protected $listeners = ['botaoSolicitarTrocaClicado' => 'onSolicitarTrocaClicado'];
 
@@ -93,5 +92,12 @@ class CreateSchedule extends CreateRecord
             'id_weekday' => request('weekday'),
             'id_timeperiod' => request('timeperiod'),
         ]);
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return Filament::auth()->user()?->hasRole('Professor')
+            ? MySchedule::getUrl()
+            : ScheduleResource::getUrl('index');
     }
 }
