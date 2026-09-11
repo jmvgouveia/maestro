@@ -72,6 +72,7 @@ class RolesAndPermissionsSeeder extends Seeder
         $recursosHumanosPermissions = [
             'view Teacher', 'view-any Teacher', 'create Teacher', 'update Teacher',
             'view User', 'view-any User', 'create User', 'update User',
+            'view ScheduleRequest', 'view-any ScheduleRequest',
             'manage user activation',
         ];
 

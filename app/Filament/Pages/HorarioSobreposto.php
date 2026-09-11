@@ -257,7 +257,7 @@ class HorarioSobreposto extends Page
 
     protected static function hasUnrestrictedAccess(User $user): bool
     {
-        return $user->hasRole('Super Admin')
+        return $user->hasAnyRole(['Super Admin', 'Recursos Humanos', 'Área Pedagógica', 'Gestor Conflitos'])
             || $user->checkPermissionTo('view unrestricted merged schedule');
     }
 

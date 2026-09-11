@@ -19,6 +19,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CoordinatedTeachers extends Page implements HasTable
 {
@@ -106,6 +107,12 @@ class CoordinatedTeachers extends Page implements HasTable
                     ->query(fn (Builder $query, array $data): Builder => filled($data['value'] ?? null)
                         ? $query->whereHas('schedules', fn (Builder $scheduleQuery): Builder => $this->applyAllowedScheduleScope($scheduleQuery)->whereHas('classes', fn (Builder $classQuery): Builder => $classQuery->whereKey($data['value'])))
                         : $query),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('export')
+                    ->label('Exportar')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->action(fn (): StreamedResponse => $this->exportTeachers()),
             ])
             ->defaultSort('name');
     }
@@ -224,6 +231,36 @@ class CoordinatedTeachers extends Page implements HasTable
         return $this->applyAllowedScheduleScope($query, ['Pendente'])->count();
     }
 
+    protected function exportTeachers(): StreamedResponse
+    {
+        $safeCsvValue = static function (mixed $value): string {
+            $value = (string) $value;
+
+            return preg_match('/^[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        };
+
+        $teachers = $this->getFilteredTableQuery()->with(['department', 'subjects'])->get();
+
+        return response()->streamDownload(function () use ($teachers, $safeCsvValue): void {
+            $output = fopen('php://output', 'wb');
+            fputcsv($output, ['Docente', 'Sigla', 'Departamento', 'Disciplinas', 'Horas letivas aprovadas', 'Pendentes', 'Turmas']);
+
+            foreach ($teachers as $teacher) {
+                fputcsv($output, array_map($safeCsvValue, [
+                    $teacher->name,
+                    $teacher->acronym,
+                    $teacher->department?->name ?? '',
+                    $teacher->subjects->pluck('name')->unique()->implode(', '),
+                    $this->approvedHours($teacher),
+                    $this->pendingCount($teacher),
+                    $this->classesSummary($teacher),
+                ]));
+            }
+
+            fclose($output);
+        }, 'docentes-coordenacao.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     protected function activeSchoolYearId(): ?int
     {
         return SchoolYear::query()->where('active', true)->value('id');
@@ -231,7 +268,8 @@ class CoordinatedTeachers extends Page implements HasTable
 
     protected static function hasUnrestrictedAccess(User $user): bool
     {
-        return $user->hasRole('Super Admin') || $user->checkPermissionTo('view unrestricted merged schedule');
+        return $user->hasAnyRole(['Super Admin', 'Recursos Humanos', 'Área Pedagógica', 'Gestor Conflitos'])
+            || $user->checkPermissionTo('view unrestricted merged schedule');
     }
 
     protected static function coordinatorBuildingIds(User $user): array

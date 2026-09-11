@@ -30,7 +30,12 @@ class ScheduleConflictResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return ! Filament::auth()->user()?->isTeacher();
+        return Filament::auth()->user()?->hasAnyRole([
+            'Super Admin',
+            'Recursos Humanos',
+            'Área Pedagógica',
+            'Gestor Conflitos',
+        ]) ?? false;
     }
 
     public static function getLabel(): string
@@ -55,7 +60,12 @@ class ScheduleConflictResource extends Resource
         }
 
         // Gestor de conflito: vê todos os pedidos do ano letivo ativo.
-        if ($user instanceof User && $user->hasRole('Gestor Conflitos')) {
+        if ($user instanceof User && $user->hasAnyRole([
+            'Super Admin',
+            'Recursos Humanos',
+            'Área Pedagógica',
+            'Gestor Conflitos',
+        ])) {
             return parent::getEloquentQuery()
                 ->where(function ($query) use ($anoLetivoAtivo) {
                     $query
