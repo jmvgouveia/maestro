@@ -15,15 +15,16 @@ class StudentObserver
     {
         // Só cria se ainda não existir user_id
         if (! $student->user_id && filled($student->email)) {
-            $user = User::create([
+            $user = User::firstOrCreate(['email' => $student->email], [
                 'name' => $student->name,
-                'email' => $student->email,
                 'password' => str()->random(40),
                 'is_active' => false,
             ]);
 
-            $user->assignRole('Aluno');
-            app(UserActivationService::class)->issueAndNotify($user);
+            if ($user->wasRecentlyCreated) {
+                $user->assignRole('Aluno');
+                app(UserActivationService::class)->issueAndNotify($user);
+            }
 
             $student->update(['user_id' => $user->id]);
         }

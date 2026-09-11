@@ -3,6 +3,7 @@
 namespace App\Filament\Imports;
 
 use App\Models\Registration;
+use App\Models\Student;
 use App\Models\Subject;
 use App\Models\SchoolYear;
 use Filament\Actions\Imports\ImportColumn;
@@ -10,6 +11,7 @@ use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class RegistrationImporter extends Importer
 {
@@ -20,8 +22,8 @@ class RegistrationImporter extends Importer
         return [
             ImportColumn::make('id_student')
                 ->label('ID do ALUNO')
-                ->rules(['required', 'integer', 'exists:students,id'])
-                ->example('1'),
+                ->rules(['required', 'string'])
+                ->example('6926'),
 
             ImportColumn::make('id_course')
                 ->label('ID do Curso')
@@ -50,8 +52,6 @@ class RegistrationImporter extends Importer
 
     protected function beforeFill(): void
     {
-        // Normalização de inteiros
-        $this->data['id_student']    = (int) ($this->data['id_student']    ?? 0);
         $this->data['id_course']     = (int) ($this->data['id_course']     ?? 0);
         $this->data['id_schoolyear'] = SchoolYear::query()->where('active', true)->value('id');
         $this->data['id_class']      = (int) ($this->data['id_class']      ?? 0);
@@ -62,6 +62,8 @@ class RegistrationImporter extends Importer
 
     public function resolveRecord(): ?Registration
     {
+        $this->data['id_student'] = $this->resolveStudentId();
+
         return DB::transaction(function () {
             // 1) Garantir/obter a registration (mesma chave composta = mesmo registo)
             $attrs = [
@@ -95,6 +97,20 @@ class RegistrationImporter extends Importer
 
             return $registration;
         });
+    }
+
+    private function resolveStudentId(): int
+    {
+        $studentNumber = trim((string) ($this->data['id_student'] ?? ''));
+        $studentId = Student::query()->where('number', $studentNumber)->value('id');
+
+        if ($studentId === null) {
+            throw ValidationException::withMessages([
+                'id_student' => "Não foi encontrado nenhum aluno com o número {$studentNumber}.",
+            ]);
+        }
+
+        return (int) $studentId;
     }
 
     /**

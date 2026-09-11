@@ -38,7 +38,9 @@ class StudentImporter extends Importer
 
     public function resolveRecord(): ?Student
     {
-        return new Student;
+        return Student::firstOrNew([
+            'number' => trim((string) ($this->data['number'] ?? '')),
+        ]);
     }
 
     protected function beforeValidate(): void

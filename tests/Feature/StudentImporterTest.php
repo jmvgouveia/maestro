@@ -62,4 +62,44 @@ class StudentImporterTest extends TestCase
 
         $this->assertSame(2, Student::count());
     }
+
+    public function test_importer_updates_student_with_existing_number(): void
+    {
+        $user = User::factory()->create();
+        $gender = Gender::where('gender', 'Masculino')->firstOrFail();
+        Student::create([
+            'number' => '1001',
+            'name' => 'Nome antigo',
+            'birthdate' => '2005-01-15',
+            'id_gender' => $gender->id,
+        ]);
+        $import = Import::create([
+            'file_name' => 'students.csv',
+            'file_path' => 'students.csv',
+            'importer' => StudentImporter::class,
+            'total_rows' => 1,
+            'user_id' => $user->getKey(),
+        ]);
+        $importer = new StudentImporter($import, [
+            'number' => 'number',
+            'name' => 'name',
+            'birthdate' => 'birthdate',
+            'id_gender' => 'id_gender',
+            'email' => 'email',
+        ], []);
+
+        $importer([
+            'number' => '1001',
+            'name' => 'Nome atualizado',
+            'birthdate' => '2005-01-15',
+            'id_gender' => 'Masculino',
+            'email' => '',
+        ]);
+
+        $this->assertSame(1, Student::count());
+        $this->assertDatabaseHas('students', [
+            'number' => '1001',
+            'name' => 'Nome atualizado',
+        ]);
+    }
 }
