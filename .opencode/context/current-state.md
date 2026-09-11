@@ -67,6 +67,11 @@ A página disponibiliza ações condicionais para selecionar todos os docentes d
 departamento e/ou do Polo/Núcleo; cada ação só aparece quando o coordenador tem
 o cargo correspondente.
 
+Foi corrigido o `RegistrationImporter` após falhas genéricas na importação de
+matrículas: aceita os cabeçalhos reais (`Nº Interno`, `Id_Curso`, `Id_Class`,
+`Id_Subject`), só grava depois da validação do Filament e associa a disciplina
+em `afterSave`. O número interno pode ser numérico ou alfanumérico (`P5237`).
+
 ## Current State
 
 O state of the art global esta documentado em
@@ -96,6 +101,9 @@ nao foram revertidas.
 - `app/Filament/Imports/TeacherImporter.php`: importer docente com datas,
   utilizador, role e FKs relacionais por ID/nome.
 - `tests/Feature/TeacherImporterTest.php`: teste do importer docente.
+- `app/Filament/Imports/RegistrationImporter.php` e
+  `tests/Feature/RegistrationImporterTest.php`: correção e cobertura do
+  importer de matrículas.
 - `app/Filament/Widgets/WeeklyScheduleWidget.php` e a respetiva view: query de
   horarios e fallback visivel sem periodos.
 - `app/Filament/Resources/TeacherSubjectResource.php`: navegacao do docente no
