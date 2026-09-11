@@ -100,6 +100,9 @@ nao foram revertidas.
 - `app/Filament/Imports/StudentImporter.php`: correcao de dados do importador.
 - `app/Filament/Imports/TeacherImporter.php`: importer docente com datas,
   utilizador, role e FKs relacionais por ID/nome.
+- `app/Filament/Pages/SchoolYearReadinessDetails.php` e a respetiva view:
+  consulta read-only de alunos sem matrícula e professores sem disciplinas no
+  ano letivo ativo, ligada aos cartões de atenção do widget de preparação.
 - `tests/Feature/TeacherImporterTest.php`: teste do importer docente.
 - `app/Filament/Imports/RegistrationImporter.php` e
   `tests/Feature/RegistrationImporterTest.php`: correção e cobertura do

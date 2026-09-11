@@ -18,6 +18,11 @@
                         <x-filament::badge :color="$color">{{ $check['status'] }}</x-filament::badge>
                     </div>
                     <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $check['description'] }}</p>
+                    @if (! empty($check['url']) && $check['status'] === 'Atenção')
+                        <a href="{{ $check['url'] }}" class="mt-3 inline-flex text-sm font-medium text-primary-600 hover:underline">
+                            Ver registos
+                        </a>
+                    @endif
                 </div>
             @endforeach
         </div>

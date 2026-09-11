@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\SchoolYearReadinessDetails;
 use App\Models\Classes;
 use App\Models\Course;
 use App\Models\CourseSubject;
@@ -108,6 +109,7 @@ class SchoolYearReadinessWidget extends Widget
                         ? 'Todos os alunos têm matrícula no ano letivo.'
                         : "{$studentsWithoutRegistration} aluno(s) sem matrícula no ano letivo."),
                 $studentsCount > 0 && $studentsWithoutRegistration === 0 ? 'Concluído' : 'Atenção',
+                SchoolYearReadinessDetails::getUrl(),
             ),
             $this->check(
                 'Disciplinas dos professores',
@@ -117,6 +119,7 @@ class SchoolYearReadinessWidget extends Widget
                         ? 'Todos os professores têm disciplinas atribuídas.'
                         : "{$teachersWithoutSubject} professor(es) sem disciplinas atribuídas."),
                 $teachersCount > 0 && $teachersWithoutSubject === 0 ? 'Concluído' : 'Atenção',
+                SchoolYearReadinessDetails::getUrl(),
             ),
         ];
     }
@@ -129,8 +132,8 @@ class SchoolYearReadinessWidget extends Widget
             && $user->hasAnyRole(['Super Admin', 'Secretaria', 'Área Pedagógica']);
     }
 
-    private function check(string $name, string $description, string $status): array
+    private function check(string $name, string $description, string $status, ?string $url = null): array
     {
-        return compact('name', 'description', 'status');
+        return compact('name', 'description', 'status', 'url');
     }
 }
