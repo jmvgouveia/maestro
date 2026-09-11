@@ -27,8 +27,9 @@ Na navegação do painel, o aluno tem agora o grupo `Aluno`, com `Horário` e
 `As minhas disciplinas`; os restantes recursos académicos ficam em `Gestão
 Pedagógica`.
 Recursos Humanos, Área Pedagógica e Gestor de Conflitos têm consulta global da
-Coordenação e acesso à Gestão de Conflitos; a lista de docentes permite exportar
-os dados filtrados para CSV.
+Coordenação. Área Pedagógica e Gestor de Conflitos têm acesso à Gestão de
+Conflitos; o RH só acede através da atribuição explícita desse perfil. A lista
+de docentes permite exportar os dados filtrados para CSV.
 
 Tambem foi completado o importer de docentes com campos relacionais opcionais.
 Foi revista a fila de pedidos de troca e corrigido o importador de contadores de

@@ -32,7 +32,6 @@ class ScheduleConflictResource extends Resource
     {
         return Filament::auth()->user()?->hasAnyRole([
             'Super Admin',
-            'Recursos Humanos',
             'Área Pedagógica',
             'Gestor Conflitos',
         ]) ?? false;
@@ -62,7 +61,6 @@ class ScheduleConflictResource extends Resource
         // Gestor de conflito: vê todos os pedidos do ano letivo ativo.
         if ($user instanceof User && $user->hasAnyRole([
             'Super Admin',
-            'Recursos Humanos',
             'Área Pedagógica',
             'Gestor Conflitos',
         ])) {
