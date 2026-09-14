@@ -122,6 +122,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ],
             'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
+            'Encarregado de Educação' => [],
             'Secretaria' => $secretariaPermissions,
         ];
 

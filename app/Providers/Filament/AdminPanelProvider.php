@@ -18,6 +18,7 @@ use App\Filament\Widgets\StudentsOverview;
 use App\Filament\Widgets\TeachersOverview;
 use App\Http\Middleware\EnforceMfa;
 use App\Http\Middleware\EnforceReadOnlyImpersonation;
+use App\Livewire\GuardianStudentSelector;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -81,6 +82,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::USER_MENU_BEFORE,
                 fn (): string => view('filament.components.topbar-user-summary')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_START,
+                fn (): string => \Livewire\Livewire::mount(GuardianStudentSelector::class),
             )
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,

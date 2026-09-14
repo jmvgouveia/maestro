@@ -49,7 +49,8 @@ class RegistrationSubjectResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check() && auth()->user()->hasRole('Aluno');
+        return auth()->check()
+            && (auth()->user()->hasRole('Aluno') || auth()->user()->isGuardian());
     }
 
     public static function form(Form $form): Form
@@ -723,6 +724,17 @@ class RegistrationSubjectResource extends Resource
                     ->modalWidth('2xl')
                     ->extraModalWindowAttributes(['class' => 'maestro-schedule-modal'])
                     ->using(function (RegistrationSubject $record, array $data): void {
+                        $user = Auth::user();
+                        $studentId = $record->registration?->id_student;
+
+                        $authorized = $user?->isGuardian()
+                            ? $studentId !== null && (int) $studentId === $user->activeGuardianStudentId()
+                            : $user?->hasRole('Aluno')
+                                && $studentId !== null
+                                && (int) $studentId === (int) $user->student?->id;
+
+                        abort_unless($authorized, 403);
+
                         DB::transaction(function () use ($record, $data): void {
                             $schoolYear = $record->registration?->schoolyear;
                             $now = Carbon::now()->startOfDay();
@@ -896,15 +908,25 @@ class RegistrationSubjectResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->whereHas(
-                'registration.student',
-                fn ($q) => $q->where('user_id', Auth::id())
-            )
+        $user = Auth::user();
+        $query = parent::getEloquentQuery()
             ->whereHas(
                 'registration.schoolyear',
                 fn ($q) => $q->where('active', true)
             );
+
+        if ($user?->isGuardian()) {
+            $studentId = $user->activeGuardianStudentId();
+
+            return $studentId
+                ? $query->whereHas('registration', fn ($q) => $q->where('id_student', $studentId))
+                : $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereHas(
+            'registration.student',
+            fn ($q) => $q->where('user_id', Auth::id())
+        );
     }
 
     public static function getRelations(): array

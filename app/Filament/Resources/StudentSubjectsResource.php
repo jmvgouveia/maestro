@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentSubjectsResource\Pages;
 use App\Models\RegistrationSubject;
+use App\Models\SchoolYear;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
@@ -29,7 +30,9 @@ class StudentSubjectsResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasRole('Aluno') ?? false;
+        $user = auth()->user();
+
+        return $user?->hasRole('Aluno') || $user?->isGuardian();
     }
 
     public static function getLabel(): string
@@ -49,8 +52,11 @@ class StudentSubjectsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $studentId = auth()->user()?->student?->id;
-        $schoolYearId = \App\Models\SchoolYear::query()->where('active', true)->value('id');
+        $user = auth()->user();
+        $studentId = $user?->isGuardian()
+            ? $user->activeGuardianStudentId()
+            : $user?->student?->id;
+        $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
 
         if (! $studentId || ! $schoolYearId) {
             return parent::getEloquentQuery()->whereRaw('1 = 0');
