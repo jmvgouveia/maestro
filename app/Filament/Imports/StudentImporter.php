@@ -4,6 +4,8 @@ namespace App\Filament\Imports;
 
 use App\Models\Gender;
 use App\Models\Student;
+use App\Models\User;
+use App\Services\UserActivationService;
 use Carbon\Carbon;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
@@ -14,6 +16,10 @@ use Illuminate\Validation\ValidationException;
 class StudentImporter extends Importer
 {
     protected static ?string $model = Student::class;
+
+    protected ?string $guardianName = null;
+
+    protected ?string $guardianEmail = null;
 
     public static function getColumns(): array
     {
@@ -33,6 +39,12 @@ class StudentImporter extends Importer
             ImportColumn::make('email')
                 ->label('Email')
                 ->rules(['nullable', 'email']),
+            ImportColumn::make('guardian_name')
+                ->label('Nome do Encarregado de Educação')
+                ->rules(['nullable', 'string', 'max:255', 'required_with:guardian_email']),
+            ImportColumn::make('guardian_email')
+                ->label('Email do Encarregado de Educação')
+                ->rules(['nullable', 'email', 'max:255', 'required_with:guardian_name']),
         ];
     }
 
@@ -50,6 +62,12 @@ class StudentImporter extends Importer
 
         $email = trim((string) ($this->data['email'] ?? ''));
         $this->data['email'] = $email === '' ? null : $email;
+
+        $guardianName = trim((string) ($this->data['guardian_name'] ?? ''));
+        $this->data['guardian_name'] = $guardianName === '' ? null : $guardianName;
+
+        $guardianEmail = trim((string) ($this->data['guardian_email'] ?? ''));
+        $this->data['guardian_email'] = $guardianEmail === '' ? null : strtolower($guardianEmail);
 
         $this->data['birthdate'] = $this->normalizeDate($this->data['birthdate'] ?? null);
         $this->data['id_gender'] = $this->normalizeGender($this->data['id_gender'] ?? null);
@@ -92,6 +110,46 @@ class StudentImporter extends Importer
         }
 
         return $genderId;
+    }
+
+    protected function beforeFill(): void
+    {
+        $this->guardianName = $this->data['guardian_name'] ?? null;
+        $this->guardianEmail = $this->data['guardian_email'] ?? null;
+        unset($this->data['guardian_name'], $this->data['guardian_email']);
+    }
+
+    public function saveRecord(): void
+    {
+        parent::saveRecord();
+
+        $this->processGuardian($this->record, $this->guardianName, $this->guardianEmail);
+    }
+
+    private function processGuardian(Student $student, ?string $name, ?string $email): void
+    {
+        if (blank($email)) {
+            return;
+        }
+
+        $user = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => $name,
+                'password' => str()->random(40),
+                'is_active' => false,
+            ]
+        );
+
+        if (! $user->hasRole(User::ROLE_GUARDIAN)) {
+            $user->assignRole(User::ROLE_GUARDIAN);
+        }
+
+        $student->guardians()->syncWithoutDetaching([$user->id]);
+
+        if ($user->wasRecentlyCreated || (! $user->is_active && blank($user->activation_token))) {
+            app(UserActivationService::class)->issueAndNotify($user);
+        }
     }
 
     public static function getCompletedNotificationBody(Import $import): string
