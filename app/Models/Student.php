@@ -29,6 +29,13 @@ class Student extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function guardians()
+    {
+        return $this->belongsToMany(User::class, 'student_guardians')
+            ->withTimestamps();
+    }
+
     public function schedules()
     {
         return $this->belongsToMany(

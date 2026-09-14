@@ -19,6 +19,8 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticatable
 {
+    public const ROLE_GUARDIAN = 'Encarregado de Educação';
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, HasSuperAdmin, Notifiable, TwoFactorAuthentication;
 
@@ -85,6 +87,72 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
         return $this->hasOne(Student::class, 'user_id');
     }
 
+    public function guardianStudents()
+    {
+        return $this->belongsToMany(Student::class, 'student_guardians')
+            ->withTimestamps();
+    }
+
+    public function isGuardian(): bool
+    {
+        return $this->hasRole(self::ROLE_GUARDIAN);
+    }
+
+    /**
+     * Devolve o ID do aluno ativo validado contra os alunos associados ao EE.
+     * Se houver apenas um aluno, seleciona-o automaticamente.
+     */
+    public function activeGuardianStudentId(): ?int
+    {
+        if (! $this->isGuardian()) {
+            return null;
+        }
+
+        $allowed = $this->guardianStudents()->pluck('students.id')->map(fn ($id) => (int) $id)->all();
+
+        if ($allowed === []) {
+            return null;
+        }
+
+        $active = session('active_guardian_student_id');
+
+        if (in_array((int) $active, $allowed, true)) {
+            return (int) $active;
+        }
+
+        if (count($allowed) === 1) {
+            $id = $allowed[0];
+            session(['active_guardian_student_id' => $id]);
+
+            return $id;
+        }
+
+        return null;
+    }
+
+    public function setActiveGuardianStudent(?int $studentId): bool
+    {
+        if (! $this->isGuardian()) {
+            return false;
+        }
+
+        if ($studentId === null) {
+            session()->forget('active_guardian_student_id');
+
+            return true;
+        }
+
+        $allowed = $this->guardianStudents()->pluck('students.id')->map(fn ($id) => (int) $id)->all();
+
+        if (! in_array($studentId, $allowed, true)) {
+            return false;
+        }
+
+        session(['active_guardian_student_id' => $studentId]);
+
+        return true;
+    }
+
     public function mfaGraceRenewedBy()
     {
         return $this->belongsTo(self::class, 'mfa_grace_renewed_by');
@@ -101,6 +169,7 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Recursos Humanos',
                 'Área Pedagógica',
                 'Aluno',
+                self::ROLE_GUARDIAN,
             ]);
     }
 

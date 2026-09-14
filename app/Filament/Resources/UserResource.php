@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
+use App\Models\Student;
 use App\Models\User;
 use App\Notifications\UserActivationNotification;
 use App\Services\UserActivationService;
@@ -67,6 +68,14 @@ class UserResource extends Resource
                     ->relationship('roles', 'name')
                     ->preload()
                     ->visible(fn(): bool => auth()->user()?->isSuperAdmin() ?? false),
+                Select::make('guardianStudents')
+                    ->label('Alunos associados')
+                    ->relationship('guardianStudents', 'name')
+                    ->getOptionLabelFromRecordUsing(fn (Student $record): string => "{$record->number} - {$record->name}")
+                    ->multiple()
+                    ->searchable(['number', 'name'])
+                    ->preload()
+                    ->helperText('Utilizado para definir os alunos disponíveis a um Encarregado de Educação.'),
 
             ]);
     }

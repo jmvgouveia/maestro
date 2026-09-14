@@ -322,3 +322,9 @@ permitidos por turma, incluindo CPAEI em Sede/SMT. Tratar `SOT-001` e
 - Treat the repository as the source of truth for implementation state.
 - Do not persist secrets or credentials in continuity files.
 - Replace obsolete information instead of accumulating contradictory state.
+
+## Latest Work
+
+Foi implementado o acesso de Encarregados de Educação, com associação a alunos
+em `Administração -> Utilizadores`, seleção persistente no painel e migrações
+aplicadas no DDEV. O teste focado passa com 3 testes e 8 asserções.
