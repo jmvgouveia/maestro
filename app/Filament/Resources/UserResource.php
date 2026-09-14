@@ -7,36 +7,30 @@ use App\Models\Student;
 use App\Models\User;
 use App\Notifications\UserActivationNotification;
 use App\Services\UserActivationService;
-use Filament\Tables\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
-
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Auth\Access\AuthorizationException;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use STS\FilamentImpersonate\Tables\Actions\Impersonate;
-
-
-
-
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
     protected static ?string $navigationGroup = 'Administração';
+
     protected static ?string $navigationLabel = 'Utilizadores';
+
     protected static ?string $navigationIcon = 'heroicon-s-user-group';
-
-
 
     public static function getLabel(): string
     {
@@ -47,7 +41,6 @@ class UserResource extends Resource
     {
         return 'Utilizadores';
     }
-
 
     public static function form(Form $form): Form
     {
@@ -67,7 +60,7 @@ class UserResource extends Resource
                     ->multiple()
                     ->relationship('roles', 'name')
                     ->preload()
-                    ->visible(fn(): bool => auth()->user()?->isSuperAdmin() ?? false),
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false),
                 Select::make('guardianStudents')
                     ->label('Alunos associados')
                     ->relationship('guardianStudents', 'name')
@@ -100,9 +93,9 @@ class UserResource extends Resource
                     ->iconColor('primary'),
                 TextColumn::make('mfa_status')
                     ->label('MFA')
-                    ->state(fn(User $record): string => $record->hasTwoFactorEnabled() ? 'Ativa' : 'Pendente')
+                    ->state(fn (User $record): string => $record->hasTwoFactorEnabled() ? 'Ativa' : 'Pendente')
                     ->badge()
-                    ->color(fn(string $state): string => $state === 'Ativa' ? 'success' : 'warning'),
+                    ->color(fn (string $state): string => $state === 'Ativa' ? 'success' : 'warning'),
                 TextColumn::make('mfa_grace_until')
                     ->label('Prazo MFA')
                     ->date('d/m/Y')
@@ -115,7 +108,11 @@ class UserResource extends Resource
                     ->wrap(),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('roles')
+                    ->label('Tipo de utilizador')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -125,7 +122,7 @@ class UserResource extends Resource
                 Action::make('renewMfaGrace')
                     ->label('Renovar prazo MFA')
                     ->icon('heroicon-o-clock')
-                    ->visible(fn(): bool => auth()->user()?->isSuperAdmin() ?? false)
+                    ->visible(fn (): bool => auth()->user()?->isSuperAdmin() ?? false)
                     ->requiresConfirmation()
                     ->action(function (User $record): void {
                         abort_unless(auth()->user()?->isSuperAdmin(), 403);
@@ -140,7 +137,7 @@ class UserResource extends Resource
                     ->label('Repor MFA')
                     ->icon('heroicon-o-shield-exclamation')
                     ->color('danger')
-                    ->visible(fn(User $record): bool => (auth()->user()?->isSuperAdmin() ?? false) && ! $record->is(auth()->user()))
+                    ->visible(fn (User $record): bool => (auth()->user()?->isSuperAdmin() ?? false) && ! $record->is(auth()->user()))
                     ->requiresConfirmation()
                     ->modalHeading('Repor autenticação multifator')
                     ->modalDescription('A autenticação multifator será desativada e todas as sessões deste utilizador serão terminadas.')
@@ -164,7 +161,7 @@ class UserResource extends Resource
                 Action::make('activationCode')
                     ->label('Gerar código de ativação')
                     ->icon('heroicon-o-key')
-                    ->visible(fn(User $record): bool => static::canManageActivation() && ! $record->is_active)
+                    ->visible(fn (User $record): bool => static::canManageActivation() && ! $record->is_active)
                     ->action(function (User $record): void {
                         static::authorizeActivationManagement();
 
@@ -181,7 +178,7 @@ class UserResource extends Resource
                 Action::make('sendActivation')
                     ->label('Reenviar convite')
                     ->icon('heroicon-o-paper-airplane')
-                    ->visible(fn(User $record): bool => static::canManageActivation() && ! $record->is_active && app(UserActivationService::class)->hasDeliverableEmail($record))
+                    ->visible(fn (User $record): bool => static::canManageActivation() && ! $record->is_active && app(UserActivationService::class)->hasDeliverableEmail($record))
                     ->action(function (User $record): void {
                         static::authorizeActivationManagement();
 
