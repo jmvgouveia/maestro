@@ -147,7 +147,7 @@ class StudentImporter extends Importer
 
         $student->guardians()->syncWithoutDetaching([$user->id]);
 
-        if ($user->wasRecentlyCreated || (! $user->is_active && blank($user->activation_token))) {
+        if ($user->wasRecentlyCreated) {
             app(UserActivationService::class)->issueAndNotify($user);
         }
     }

@@ -91,14 +91,20 @@ class GuardianConversionImporter extends Importer
                 $user->assignRole(User::ROLE_GUARDIAN);
             }
 
-            $this->record->guardians()->syncWithoutDetaching([$user->getKey()]);
+            $studentUser = $this->record->user;
 
-            if ((int) $this->record->user_id === (int) $user->getKey()) {
+            if ($studentUser) {
+                $this->record->guardians()->detach($studentUser->getKey());
                 $this->record->forceFill(['user_id' => null])->save();
-                $user->removeRole('Aluno');
+
+                if (! Student::where('user_id', $studentUser->getKey())->exists()) {
+                    $studentUser->removeRole('Aluno');
+                }
             }
 
-            if ($user->wasRecentlyCreated || (! $user->is_active && blank($user->activation_token))) {
+            $this->record->guardians()->syncWithoutDetaching([$user->getKey()]);
+
+            if ($user->wasRecentlyCreated) {
                 app(UserActivationService::class)->issueAndNotify($user);
             }
         });
