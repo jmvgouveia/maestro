@@ -3,7 +3,9 @@
 namespace App\Policies;
 
 use App\Models\Schedule;
+use App\Models\SchoolYear;
 use App\Models\User;
+use Carbon\Carbon;
 
 class SchedulePolicy
 {
@@ -52,6 +54,12 @@ class SchedulePolicy
      */
     public function delete(User $user, Schedule $schedule): bool
     {
+        if ($user->isTeacher()) {
+            return $user->checkPermissionTo('delete Schedule')
+                && $this->belongsToTeacher($user, $schedule)
+                && $this->isScheduleWindowOpen($schedule);
+        }
+
         return $this->canManageGlobally($user) && $user->checkPermissionTo('delete Schedule');
     }
 
@@ -126,5 +134,46 @@ class SchedulePolicy
     private function canManageGlobally(User $user): bool
     {
         return ! $user->isTeacher() && ! $user->hasRole('Aluno');
+    }
+
+    private function isScheduleWindowOpen(Schedule $schedule): bool
+    {
+        $schoolYear = SchoolYear::query()
+            ->whereKey($schedule->id_schoolyear)
+            ->where('active', true)
+            ->first();
+
+        if (! $schoolYear) {
+            return false;
+        }
+
+        $windows = [
+            'Especializado' => [$schoolYear->start_date_especializado, $schoolYear->end_date_especializado],
+            'Profissional' => [$schoolYear->start_date_profissional, $schoolYear->end_date_profissional],
+            'Livre' => [$schoolYear->start_date_livre, $schoolYear->end_date_livre],
+        ];
+
+        $classTypes = $schedule->classes()
+            ->with('course')
+            ->get()
+            ->map(fn ($class) => $class->course?->type);
+
+        if ($classTypes->contains(null)) {
+            return false;
+        }
+
+        $types = $classTypes->isEmpty()
+            ? collect(array_keys($windows))
+            : $classTypes->unique();
+
+        $today = Carbon::today();
+
+        return $types->every(function (string $type) use ($windows, $today): bool {
+            [$start, $end] = $windows[$type] ?? [null, null];
+
+            return $start && $end
+                && $today->greaterThanOrEqualTo(Carbon::parse($start))
+                && $today->lessThanOrEqualTo(Carbon::parse($end));
+        });
     }
 }

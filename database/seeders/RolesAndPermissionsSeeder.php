@@ -104,6 +104,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view ScheduleRequest',
                 'view-any ScheduleRequest',
                 'update ScheduleRequest',
+                'delete Schedule',
                 'aprovar trocas',
                 'view teacher students',
             ],

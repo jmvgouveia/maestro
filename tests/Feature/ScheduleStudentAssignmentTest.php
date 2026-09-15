@@ -168,13 +168,17 @@ class ScheduleStudentAssignmentTest extends TestCase
         DB::table('students')->where('id', $data['student_id'])->update(['user_id' => $user->id]);
         DB::table('schedules')->where('id', $data['other_schedule_id'])->update([
             'shift' => 'Turno A - P1234',
+            'shift_limit' => 30,
+        ]);
+        DB::table('schedules')->where('id', $data['selected_schedule_id'])->update([
+            'shift_limit' => 15,
         ]);
 
-        foreach (range(1, 10) as $position) {
+        foreach (range(1, 15) as $position) {
             DB::table('registrations_subjects')->insert([
                 'id_registration' => $data['registration_id'],
                 'id_subject' => $data['subject_id'],
-                'id_schedule' => $position <= 5 ? $data['selected_schedule_id'] : $data['other_schedule_id'],
+                'id_schedule' => $position <= 8 ? $data['selected_schedule_id'] : $data['other_schedule_id'],
                 'shift' => 'Turno A - P1234',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -192,7 +196,7 @@ class ScheduleStudentAssignmentTest extends TestCase
 
         Livewire::test(ListRegistrationSubjects::class)
             ->mountTableAction('selectTurno', $registrationSubjectId)
-            ->assertSee('0 de 10')
+            ->assertSee('0 de 15')
             ->setTableActionData(['id_schedule' => $data['selected_schedule_id']])
             ->callMountedTableAction()
             ->assertHasTableActionErrors();
