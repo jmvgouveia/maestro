@@ -107,6 +107,8 @@ class EditSchedule extends EditRecord
                         DB::transaction(function () {
                             $record = $this->record;
 
+                            $this->validateScheduleWindow([], [$record->id]);
+
                             $pendingRequest = DBHelper::getScheduleRequestByStatus($record->id, 'Recusado');
 
                             if ($pendingRequest) {

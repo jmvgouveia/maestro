@@ -545,7 +545,8 @@ class ScheduleResource extends Resource
                                 TextInput::make('shift_limit')
                                     ->label('Número limite de alunos')
                                     ->numeric()
-                                    ->minValue(1)
+                                    ->minValue(0)
+                                    ->helperText('Indique 0 para bloquear a sala e não permitir inscrições.')
                                     ->visible(
                                         fn (callable $get) => Str::startsWith($get('shift'), ['Turno A', 'Turno B', 'Turno C', 'Turno D'])
                                     ),
