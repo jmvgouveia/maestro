@@ -142,14 +142,14 @@ class EditSchedule extends EditRecord
                                 );
                             }
 
-                            if ($record->status !== 'Pendente') {
-                                $this->hoursCounterUpdate($record, true);
-                            }
-
                             // Alterar estado de pedido para eliminado
                             DBHelper::updateScheduleRequestStatus($this->record->id, true, 'Eliminado', MSGErro::ERRO_ELIMINAR_SCHEDULE);
 
                             DBHelper::updateScheduleStatus($this->record->id, 'Eliminado', MSGErro::ERRO_ELIMINAR_SCHEDULE);
+
+                            if ($record->status !== 'Pendente') {
+                                $this->hoursCounterUpdate($record, true);
+                            }
 
                             Notification::make()
                                 ->title('Horário Eliminado')
