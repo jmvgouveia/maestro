@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\RegistrationSubjectResource\Pages\ListRegistrationSubjects;
+use App\Filament\Resources\ScheduleResource\Traits\HourCounter;
 use App\Filament\Resources\TeacherStudentsResource;
 use App\Models\RegistrationSubject;
 use App\Models\Schedule;
 use App\Models\Student;
+use App\Models\TeacherHourCounter;
 use App\Models\User;
 use App\Services\MergedScheduleCalendarService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -204,6 +206,32 @@ class ScheduleStudentAssignmentTest extends TestCase
         $this->assertDatabaseHas('registrations_subjects', [
             'id' => $registrationSubjectId,
             'id_schedule' => null,
+        ]);
+    }
+
+    public function test_deleting_approved_schedule_recalculates_teaching_hours_without_it(): void
+    {
+        $data = $this->createScheduleFixture();
+        TeacherHourCounter::create([
+            'id_teacher' => $data['teacher_id'],
+            'id_schoolyear' => $data['school_year_id'],
+            'workload' => 0,
+            'teaching_load' => 0,
+            'non_teaching_load' => 0,
+        ]);
+
+        DB::table('schedules')->where('id', $data['selected_schedule_id'])->update([
+            'status' => 'Eliminado',
+        ]);
+
+        (new HourCounterProbe)->update(Schedule::findOrFail($data['selected_schedule_id']));
+
+        $this->assertDatabaseHas('teacher_hour_counters', [
+            'id_teacher' => $data['teacher_id'],
+            'id_schoolyear' => $data['school_year_id'],
+            'teaching_load' => 21,
+            'non_teaching_load' => 4,
+            'workload' => 25,
         ]);
     }
 
@@ -438,5 +466,15 @@ class ScheduleStudentAssignmentTest extends TestCase
             'selected_schedule_id' => $selectedScheduleId,
             'other_schedule_id' => $otherScheduleId,
         ];
+    }
+}
+
+class HourCounterProbe
+{
+    use HourCounter;
+
+    public function update(Schedule $schedule): void
+    {
+        $this->hoursCounterUpdate($schedule, true);
     }
 }
