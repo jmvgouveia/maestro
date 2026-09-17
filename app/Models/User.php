@@ -170,6 +170,7 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Área Pedagógica',
                 'Aluno',
                 self::ROLE_GUARDIAN,
+                'Horário/Sala',
             ]);
     }
 

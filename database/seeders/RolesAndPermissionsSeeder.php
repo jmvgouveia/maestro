@@ -30,6 +30,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'update ScheduleRequest',
             'manage user activation',
             'view unrestricted merged schedule',
+            'view room merged schedule',
         ];
 
         $secretariaPermissions = [
@@ -120,6 +121,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'Área Pedagógica' => $areaPedagogicaPermissions,
             'Horário Sobreposto' => [
                 'view unrestricted merged schedule',
+            ],
+            'Horário/Sala' => [
+                'view room merged schedule',
             ],
             'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
