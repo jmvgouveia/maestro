@@ -592,8 +592,15 @@ class RegistrationSubjectResource extends Resource
                             ->where('id_subject', $record->id_subject)
                             ->where('status', 'Aprovado')
                             ->where('id_schoolyear', $record->registration?->id_schoolyear)
-                            ->whereNotNull('shift')
-                            ->where('shift', 'like', '%'.$studentNo.'%')
+                            ->where(function ($query) use ($record, $studentNo) {
+                                $query
+                                    ->whereHas('students', fn ($q) => $q->where('students.id', $record->registration?->id_student))
+                                    ->orWhere(function ($shiftQuery) use ($studentNo) {
+                                        $shiftQuery
+                                            ->whereNotNull('shift')
+                                            ->where('shift', 'like', '%'.$studentNo.'%');
+                                    });
+                            })
                             ->when($record->registration?->id_class, fn ($q, $id) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $id)))
                             ->when($record->registration?->id_schoolyear, fn ($q, $sy) => $q->where('id_schoolyear', $sy))
                             ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
@@ -643,7 +650,11 @@ class RegistrationSubjectResource extends Resource
                             ->where('id_subject', $record->id_subject)
                             ->where('id_teacher', $teacherId)
                             ->where('status', 'Aprovado')
-                            ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
+                            ->when(
+                                blank($shiftName),
+                                fn ($q) => $q->whereHas('students', fn ($studentQuery) => $studentQuery->where('students.id', $record->registration?->id_student)),
+                                fn ($q) => $q->where('shift', $shiftName),
+                            )
                             ->when($classId, fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId)))
                             ->when($schoolYearId, fn ($q) => $q->where('id_schoolyear', $schoolYearId))
                             ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
