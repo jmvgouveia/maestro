@@ -100,7 +100,16 @@ class HorarioSobrepostoSalas extends Page
         $merged['roomScopes'] = Room::query()
             ->whereIn('id', $ids)
             ->get()
-            ->mapWithKeys(fn (Room $room): array => [$room->id => $room->building?->name])
+            ->mapWithKeys(function (Room $room): array {
+                $building = $room->building;
+                $label = $building?->address ?: $building?->name;
+
+                if ($building?->address && $building->name) {
+                    $label .= " ({$building->name})";
+                }
+
+                return [$room->id => $label];
+            })
             ->all();
 
         return $merged;
@@ -119,7 +128,16 @@ class HorarioSobrepostoSalas extends Page
                 ->where('id_schoolyear', $activeSchoolYearId)
                 ->whereIn('status', ['Aprovado', 'Aprovado DP']))
             ->orderBy('name')
-            ->pluck('name', 'id')
+            ->get(['id', 'name', 'address'])
+            ->mapWithKeys(function (Building $building): array {
+                $label = $building->address ?: $building->name;
+
+                if ($building->address && $building->name) {
+                    $label .= " ({$building->name})";
+                }
+
+                return [$building->id => $label];
+            })
             ->all();
     }
 
