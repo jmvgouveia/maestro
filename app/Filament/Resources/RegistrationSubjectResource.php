@@ -19,7 +19,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
@@ -546,20 +545,80 @@ class RegistrationSubjectResource extends Resource
                     ->badge()
                     ->extraAttributes(['style' => 'white-space: pre-line;']) // permite \n virar múltiplas linhas
                     ->state(function ($record) {
-                        $schedules = self::schedulesForStudent($record);
-                        $record->foundSchedulesForTurno = $schedules;
+                        $selected = method_exists($record, 'selectedSchedule')
+                            ? $record->selectedSchedule()->with(['teacher'])->first()
+                            : $record->selectedSchedule;
 
-                        if ($schedules->isEmpty()) {
+                        $shiftName = null;
+
+                        if ($selected) {
+                            $shiftName = (string) ($selected->shift ?? null);
+                            $classId = $record->registration?->id_class;
+                            $schoolYearId = $record->registration?->id_schoolyear;
+
+                            $siblings = Schedule::query()
+                                ->where('id_subject', $record->id_subject)
+                                ->where('status', 'Aprovado')
+                                ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
+                                ->when($classId, fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId)))
+                                ->when($schoolYearId, fn ($q) => $q->where('id_schoolyear', $schoolYearId))
+                                ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
+                                ->get();
+
+                            $record->foundSchedulesForTurno = $siblings;
+
+                            return $selected->teacher?->name
+                                ? 'Prof. '.$selected->teacher->name
+                                : ($shiftName ?: 'Turno por escolher');
+                        }
+
+                        $studentNo = $record->student?->number
+                            ?? $record->registration?->student?->number
+                            ?? $record->number
+                            ?? null;
+
+                        if (! $studentNo) {
                             return 'Sem Turno';
                         }
 
-                        $names = $schedules->pluck('teacher.name')->filter()->unique()->values();
+                        $candidates = Schedule::query()
+                            ->where('id_subject', $record->id_subject)
+                            ->where('status', 'Aprovado')
+                            ->where('id_schoolyear', $record->registration?->id_schoolyear)
+                            ->whereHas('students', fn ($q) => $q->where('students.id', $record->registration?->id_student))
+                            ->when($record->registration?->id_class, fn ($q, $id) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $id)))
+                            ->when($record->registration?->id_schoolyear, fn ($q, $sy) => $q->where('id_schoolyear', $sy))
+                            ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
+                            ->get();
 
-                        return $names->count() === 1
-                            ? 'Prof. '.$names->first()
-                            : ($names->count() > 1
-                                ? $names->take(2)->implode(' / ').' +'.($names->count() - 2)
-                                : 'Horário geral');
+                        if ($candidates->isEmpty()) {
+                            return 'Sem Turno';
+                        }
+
+                        $shiftName = (string) ($candidates->first()->shift ?? null);
+                        $classId = $record->registration?->id_class;
+                        $schoolYearId = $record->registration?->id_schoolyear;
+
+                        $siblings = Schedule::query()
+                            ->where('id_subject', $record->id_subject)
+                            ->where('status', 'Aprovado')
+                            ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
+                            ->when($classId, fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId)))
+                            ->when($schoolYearId, fn ($q) => $q->where('id_schoolyear', $schoolYearId))
+                            ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
+                            ->get();
+
+                        $record->foundSchedulesForTurno = $siblings;
+
+                        $names = $siblings->pluck('teacher.name')->filter()->unique()->values();
+
+                        if ($names->isEmpty()) {
+                            return $shiftName ?: 'Sem Turno';
+                        }
+
+                        return $names->count() <= 2
+                            ? 'Prof. '.$names->implode(' / ')
+                            : $names->take(2)->implode(' / ').' +'.($names->count() - 2);
                     })
                     ->color(function ($record) {
                         $hasSelected = method_exists($record, 'selectedSchedule')
