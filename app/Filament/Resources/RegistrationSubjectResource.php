@@ -558,6 +558,7 @@ class RegistrationSubjectResource extends Resource
 
                             $siblings = Schedule::query()
                                 ->where('id_subject', $record->id_subject)
+                                ->where('id_teacher', $selected->id_teacher)
                                 ->where('status', 'Aprovado')
                                 ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
                                 ->when($classId, fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId)))
@@ -585,22 +586,48 @@ class RegistrationSubjectResource extends Resource
                             ->where('id_subject', $record->id_subject)
                             ->where('status', 'Aprovado')
                             ->where('id_schoolyear', $record->registration?->id_schoolyear)
-                            ->whereHas('students', fn ($q) => $q->where('students.id', $record->registration?->id_student))
+                            ->where(function ($query) use ($record, $studentNo) {
+                                $query
+                                    ->whereHas('students', fn ($q) => $q->where('students.id', $record->registration?->id_student))
+                                    ->orWhere('shift', 'like', '%'.$studentNo.'%');
+                            })
                             ->when($record->registration?->id_class, fn ($q, $id) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $id)))
                             ->when($record->registration?->id_schoolyear, fn ($q, $sy) => $q->where('id_schoolyear', $sy))
                             ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
                             ->get();
 
                         if ($candidates->isEmpty()) {
-                            return 'Sem Turno';
+                            $generalSchedules = Schedule::query()
+                                ->where('id_subject', $record->id_subject)
+                                ->where('status', 'Aprovado')
+                                ->where('id_schoolyear', $record->registration?->id_schoolyear)
+                                ->where(function ($query) {
+                                    $query->whereNull('shift')->orWhere('shift', '');
+                                })
+                                ->when($record->registration?->id_class, fn ($q, $id) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $id)))
+                                ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
+                                ->get();
+
+                            if ($generalSchedules->isEmpty()) {
+                                return 'Sem Turno';
+                            }
+
+                            $record->foundSchedulesForTurno = $generalSchedules;
+                            $names = $generalSchedules->pluck('teacher.name')->filter()->unique()->values();
+
+                            return $names->isNotEmpty()
+                                ? 'Prof. '.$names->implode(' / ')
+                                : 'Horário geral';
                         }
 
                         $shiftName = (string) ($candidates->first()->shift ?? null);
+                        $teacherId = $candidates->first()->id_teacher;
                         $classId = $record->registration?->id_class;
                         $schoolYearId = $record->registration?->id_schoolyear;
 
                         $siblings = Schedule::query()
                             ->where('id_subject', $record->id_subject)
+                            ->where('id_teacher', $teacherId)
                             ->where('status', 'Aprovado')
                             ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
                             ->when($classId, fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId)))
