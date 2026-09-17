@@ -605,10 +605,11 @@ class RegistrationSubjectResource extends Resource
                             ->when($record->registration?->id_schoolyear, fn ($q, $sy) => $q->where('id_schoolyear', $sy))
                             ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
                             ->get()
-                            ->filter(fn (Schedule $schedule): bool => preg_match(
-                                '/(^|\D)'.preg_quote((string) $studentNo, '/').'($|\D)/',
-                                (string) $schedule->shift,
-                            ) === 1)
+                            ->filter(fn (Schedule $schedule): bool => blank($schedule->shift)
+                                || preg_match(
+                                    '/(^|\D)'.preg_quote((string) $studentNo, '/').'($|\D)/',
+                                    (string) $schedule->shift,
+                                ) === 1)
                             ->values();
 
                         if ($candidates->isEmpty()) {
