@@ -171,10 +171,7 @@ class RegistrationSubjectResource extends Resource
                     $slotLines = [];      // linhas com dia/hora/sala (sem nº de vagas)
                     $scheduleIds = $group->pluck('id');
                     $limit = (int) $group->min('shift_limit');
-                    $enrolled = RegistrationSubject::query()
-                        ->whereIn('id_schedule', $scheduleIds)
-                        ->whereKeyNot($record->getKey())
-                        ->count();
+                    $enrolled = self::countEnrolledForShift($record, $scheduleIds, (string) $first->shift);
                     $available = max(0, $limit - $enrolled);
                     $selectedScheduleId = $available > 0 ? $first->id : null;
 
@@ -791,10 +788,11 @@ class RegistrationSubjectResource extends Resource
                                 ->lockForUpdate()
                                 ->get(['id', 'shift_limit']);
 
-                            $enrolled = RegistrationSubject::query()
-                                ->whereIn('id_schedule', $turnoSchedules->pluck('id'))
-                                ->whereKeyNot($record->getKey())
-                                ->count();
+                            $enrolled = self::countEnrolledForShift(
+                                $record,
+                                $turnoSchedules->pluck('id'),
+                                (string) $schedule->shift,
+                            );
                             $limit = (int) $turnoSchedules->min('shift_limit');
 
                             if ($enrolled >= $limit) {
@@ -927,6 +925,35 @@ class RegistrationSubjectResource extends Resource
             'registration.student',
             fn ($q) => $q->where('user_id', Auth::id())
         );
+    }
+
+    private static function countEnrolledForShift(
+        RegistrationSubject $record,
+        mixed $scheduleIds,
+        string $shift,
+    ): int {
+        $scheduleIds = collect($scheduleIds)->map(fn ($id) => (int) $id)->values();
+
+        return RegistrationSubject::query()
+            ->whereKeyNot($record->getKey())
+            ->where(function (Builder $query) use ($record, $scheduleIds, $shift): void {
+                $query->whereIn('id_schedule', $scheduleIds)
+                    ->orWhere(function (Builder $legacyQuery) use ($record, $scheduleIds, $shift): void {
+                        $legacyQuery
+                            ->whereNull('id_schedule')
+                            ->where('id_subject', $record->id_subject)
+                            ->whereHas('registration', function (Builder $registrationQuery) use ($record): void {
+                                $registrationQuery
+                                    ->where('id_schoolyear', $record->registration->id_schoolyear)
+                                    ->where('id_class', $record->registration->id_class);
+                            })
+                            ->where(function (Builder $shiftQuery) use ($scheduleIds, $shift): void {
+                                $shiftQuery->where('shift', $shift)
+                                    ->orWhereIn('shift', $scheduleIds->map(fn ($id) => (string) $id));
+                            });
+                    });
+            })
+            ->count();
     }
 
     public static function getRelations(): array

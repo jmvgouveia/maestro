@@ -180,7 +180,9 @@ class ScheduleStudentAssignmentTest extends TestCase
             DB::table('registrations_subjects')->insert([
                 'id_registration' => $data['registration_id'],
                 'id_subject' => $data['subject_id'],
-                'id_schedule' => $position <= 8 ? $data['selected_schedule_id'] : $data['other_schedule_id'],
+                'id_schedule' => $position <= 8
+                    ? $data['selected_schedule_id']
+                    : ($position === 15 ? null : $data['other_schedule_id']),
                 'shift' => 'Turno A - P1234',
                 'created_at' => now(),
                 'updated_at' => now(),
