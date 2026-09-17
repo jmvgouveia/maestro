@@ -19,6 +19,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
@@ -545,107 +546,20 @@ class RegistrationSubjectResource extends Resource
                     ->badge()
                     ->extraAttributes(['style' => 'white-space: pre-line;']) // permite \n virar múltiplas linhas
                     ->state(function ($record) {
-                        // 1) Tentar obter o nome do turno a partir do selectedSchedule
-                        $selected = method_exists($record, 'selectedSchedule')
-                            ? $record->selectedSchedule()->with(['teacher'])->first()
-                            : $record->selectedSchedule;
+                        $schedules = self::schedulesForStudent($record);
+                        $record->foundSchedulesForTurno = $schedules;
 
-                        $shiftName = null;
-
-                        if ($selected) {
-                            $shiftName = (string) ($selected->shift ?? null);
-
-                            // Carrega TODAS as slots do mesmo turno (mesma disciplina + mesmo nome do turno)
-                            $classId = $record->registration?->id_class;
-                            $schoolYearId = $record->registration?->id_schoolyear;
-
-                            $siblings = Schedule::query()
-                                ->where('id_subject', $record->id_subject)
-                                ->where('status', 'Aprovado')
-                                ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
-                                ->when(
-                                    $classId,
-                                    fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId))
-                                )
-                                ->when(
-                                    $schoolYearId,
-                                    fn ($q) => $q->where('id_schoolyear', $schoolYearId)
-                                )
-                                ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
-                                ->get();
-
-                            $record->foundSchedulesForTurno = $siblings;
-
-                            // Título do badge
-                            $name = $selected->teacher?->name;
-                            if (! blank($name)) {
-                                return 'Prof. '.$name;
-                            }
-
-                            return $shiftName ?: 'Turno por escolher';
-                        }
-
-                        // 2) Fallback: tentar inferir o turno pelos candidatos (nº do aluno no texto do shift)
-                        $studentNo = $record->student?->number
-                            ?? $record->registration?->student?->number
-                            ?? $record->number
-                            ?? null;
-
-                        if (! $studentNo) {
+                        if ($schedules->isEmpty()) {
                             return 'Sem Turno';
                         }
 
-                        $candidates = Schedule::query()
-                            ->where('id_subject', $record->id_subject)
-                            ->where('status', 'Aprovado')
-                            ->where('id_schoolyear', $record->registration?->id_schoolyear)
-                            ->whereHas('students', fn ($q) => $q->where('students.id', $record->registration?->id_student))
-                            ->when(
-                                $record->registration?->id_class,
-                                fn ($q, $id) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $id))
-                            )
-                            ->when(
-                                $record->registration?->id_schoolyear,
-                                fn ($q, $sy) => $q->where('id_schoolyear', $sy)
-                            )
-                            ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
-                            ->get();
+                        $names = $schedules->pluck('teacher.name')->filter()->unique()->values();
 
-                        if ($candidates->isEmpty()) {
-                            return 'Sem Turno';
-                        }
-
-                        // Usar o nome do turno do primeiro candidato para ir buscar TODAS as slots do mesmo turno
-                        $shiftName = (string) ($candidates->first()->shift ?? null);
-                        $classId = $record->registration?->id_class;
-                        $schoolYearId = $record->registration?->id_schoolyear;
-
-                        $siblings = Schedule::query()
-                            ->where('id_subject', $record->id_subject)
-                            ->where('status', 'Aprovado')
-                            ->when($shiftName, fn ($q) => $q->where('shift', $shiftName))
-                            ->when(
-                                $classId,
-                                fn ($q) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $classId))
-                            )
-                            ->when(
-                                $schoolYearId,
-                                fn ($q) => $q->where('id_schoolyear', $schoolYearId)
-                            )
-                            ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
-                            ->get();
-
-                        $record->foundSchedulesForTurno = $siblings;
-
-                        // Badge: nomes dos docentes (até 2 + “+N”); se vazio, mostra o turno
-                        $names = $siblings->pluck('teacher.name')->filter()->unique()->values();
-                        if ($names->isEmpty()) {
-                            return $shiftName ?: 'Sem Turno';
-                        }
-
-                        return $names->count() <= 2
-                            ? 'Prof. '.$names->implode(' / ')
-                            : $names->take(2)->implode(' / ').' +'.($names->count() - 2);
+                        return $names->count() === 1
+                            ? 'Prof. '.$names->first()
+                            : ($names->count() > 1
+                                ? $names->take(2)->implode(' / ').' +'.($names->count() - 2)
+                                : 'Horário geral');
                     })
                     ->color(function ($record) {
                         $hasSelected = method_exists($record, 'selectedSchedule')
@@ -925,6 +839,80 @@ class RegistrationSubjectResource extends Resource
             'registration.student',
             fn ($q) => $q->where('user_id', Auth::id())
         );
+    }
+
+    protected static function schedulesForStudent(RegistrationSubject $record): Collection
+    {
+        $registration = $record->registration;
+
+        if (! $registration) {
+            return collect();
+        }
+
+        $schedules = Schedule::query()
+            ->where('id_subject', $record->id_subject)
+            ->where('id_schoolyear', $registration->id_schoolyear)
+            ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+            ->whereHas('classes', fn ($query) => $query->where('classes.id', $registration->id_class))
+            ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
+            ->orderBy('id')
+            ->get();
+
+        $selected = $record->selectedSchedule()->with('teacher')->first();
+
+        if ($selected) {
+            $selectedShift = (string) ($selected->shift ?? '');
+
+            return $schedules
+                ->filter(fn (Schedule $schedule): bool => (int) $schedule->id_teacher === (int) $selected->id_teacher
+                    && ($selectedShift === ''
+                        ? blank($schedule->shift)
+                        : (string) $schedule->shift === $selectedShift))
+                ->values();
+        }
+
+        $studentSchedules = $schedules->filter(fn (Schedule $schedule): bool => $schedule->students->contains('id', $registration->id_student));
+
+        if ($studentSchedules->isNotEmpty()) {
+            $studentShift = $studentSchedules->pluck('shift')
+                ->filter(fn ($shift): bool => ! blank($shift))
+                ->unique()
+                ->values();
+
+            if ($studentShift->count() === 1) {
+                $studentSchedule = $studentSchedules->first();
+
+                return $schedules
+                    ->filter(fn (Schedule $schedule): bool => (int) $schedule->id_teacher === (int) $studentSchedule->id_teacher
+                        && (string) $schedule->shift === (string) $studentShift->first())
+                    ->values();
+            }
+        }
+
+        $shiftNames = $schedules->pluck('shift')
+            ->filter(fn ($shift): bool => ! blank($shift))
+            ->unique()
+            ->values();
+
+        if ($shiftNames->count() > 1) {
+            return collect();
+        }
+
+        $generalSchedules = $schedules
+            ->filter(fn (Schedule $schedule): bool => blank($schedule->shift))
+            ->values();
+
+        if ($generalSchedules->isNotEmpty()) {
+            return $generalSchedules;
+        }
+
+        if ($shiftNames->count() === 1) {
+            return $schedules
+                ->filter(fn (Schedule $schedule): bool => (string) $schedule->shift === (string) $shiftNames->first())
+                ->values();
+        }
+
+        return collect();
     }
 
     private static function countEnrolledForShift(
