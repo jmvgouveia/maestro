@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\TeacherResource;
+use App\Models\Building;
 use App\Models\Room;
 use App\Models\SchoolYear;
 use App\Models\User;
@@ -26,6 +27,7 @@ class HorarioSobrepostoSalas extends Page
     protected static string $view = 'filament.pages.horario-sobreposto-salas';
 
     public array $data = [
+        'building_id' => null,
         'room_ids' => [],
     ];
 
@@ -54,7 +56,7 @@ class HorarioSobrepostoSalas extends Page
                 ->label('Selecionar todas')
                 ->icon('heroicon-o-check-circle')
                 ->outlined()
-                ->action(fn () => $this->data['room_ids'] = $this->allowedRoomIds()),
+                ->action(fn () => $this->data['room_ids'] = $this->allowedRoomIds($this->data['building_id'] ?? null)),
         ];
     }
 
@@ -63,9 +65,17 @@ class HorarioSobrepostoSalas extends Page
         return $form->schema([
             Forms\Components\Section::make('Selecionar salas')
                 ->schema([
+                    Forms\Components\Select::make('building_id')
+                        ->label('Polo/Núcleo')
+                        ->options(fn () => $this->buildingOptions())
+                        ->searchable()
+                        ->placeholder('Todos os polos/núcleos')
+                        ->visible(fn () => static::hasUnrestrictedAccess(Filament::auth()->user()))
+                        ->live()
+                        ->afterStateUpdated(fn (callable $set) => $set('room_ids', [])),
                     Forms\Components\MultiSelect::make('room_ids')
                         ->label('Salas')
-                        ->options(fn () => $this->roomOptions())
+                        ->options(fn (callable $get) => $this->roomOptions($get('building_id')))
                         ->searchable()
                         ->preload()
                         ->reactive(),
@@ -96,9 +106,26 @@ class HorarioSobrepostoSalas extends Page
         return $merged;
     }
 
-    protected function roomOptions(): array
+    protected function buildingOptions(): array
     {
-        return $this->allowedRoomQuery()
+        $activeSchoolYearId = SchoolYear::query()->where('active', true)->value('id');
+
+        if (! $activeSchoolYearId) {
+            return [];
+        }
+
+        return Building::query()
+            ->whereHas('rooms.schedules', fn ($scheduleQuery) => $scheduleQuery
+                ->where('id_schoolyear', $activeSchoolYearId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP']))
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    protected function roomOptions(?int $buildingId = null): array
+    {
+        return $this->allowedRoomQuery($buildingId)
             ->orderBy('name')
             ->get()
             ->mapWithKeys(fn (Room $room): array => [
@@ -109,15 +136,15 @@ class HorarioSobrepostoSalas extends Page
             ->all();
     }
 
-    protected function allowedRoomIds(): array
+    protected function allowedRoomIds(?int $buildingId = null): array
     {
-        return $this->allowedRoomQuery()
+        return $this->allowedRoomQuery($buildingId)
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->toArray();
     }
 
-    protected function allowedRoomQuery()
+    protected function allowedRoomQuery(?int $buildingId = null)
     {
         $user = Filament::auth()->user();
         $activeSchoolYearId = SchoolYear::query()->where('active', true)->value('id');
@@ -128,9 +155,11 @@ class HorarioSobrepostoSalas extends Page
         }
 
         if (static::hasUnrestrictedAccess($user)) {
-            return $query->whereHas('schedules', fn ($scheduleQuery) => $scheduleQuery
-                ->where('id_schoolyear', $activeSchoolYearId)
-                ->whereIn('status', ['Aprovado', 'Aprovado DP']));
+            return $query
+                ->when($buildingId !== null, fn ($roomQuery) => $roomQuery->where('id_building', $buildingId))
+                ->whereHas('schedules', fn ($scheduleQuery) => $scheduleQuery
+                    ->where('id_schoolyear', $activeSchoolYearId)
+                    ->whereIn('status', ['Aprovado', 'Aprovado DP']));
         }
 
         $buildingIds = static::coordinatorBuildingIds($user);
@@ -141,6 +170,7 @@ class HorarioSobrepostoSalas extends Page
 
         return $query
             ->whereIn('id_building', $buildingIds)
+            ->when($buildingId !== null, fn ($roomQuery) => $roomQuery->where('id_building', $buildingId))
             ->whereHas('schedules', fn ($scheduleQuery) => $scheduleQuery
                 ->where('id_schoolyear', $activeSchoolYearId)
                 ->whereIn('status', ['Aprovado', 'Aprovado DP']));
