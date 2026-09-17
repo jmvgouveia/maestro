@@ -582,6 +582,12 @@ class RegistrationSubjectResource extends Resource
                             return 'Sem Turno';
                         }
 
+                        // Disciplinas com inscrição só mostram horários depois
+                        // de a aluna escolher o id_schedule.
+                        if ($record->subject?->student_can_enroll) {
+                            return 'Sem Turno';
+                        }
+
                         $candidates = Schedule::query()
                             ->where('id_subject', $record->id_subject)
                             ->where('status', 'Aprovado')
@@ -614,10 +620,9 @@ class RegistrationSubjectResource extends Resource
                                 return 'Sem Turno';
                             }
 
-                            // Em disciplinas com inscrição, só há horário automático
+                            // Sem turno, só é possível identificar a aula da aluna
                             // quando existe um único docente para a turma/disciplina.
-                            if ($record->subject?->student_can_enroll
-                                && $generalSchedules->pluck('id_teacher')->filter()->unique()->count() !== 1) {
+                            if ($generalSchedules->pluck('id_teacher')->filter()->unique()->count() !== 1) {
                                 return 'Sem Turno';
                             }
 
