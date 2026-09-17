@@ -586,15 +586,17 @@ class RegistrationSubjectResource extends Resource
                             ->where('id_subject', $record->id_subject)
                             ->where('status', 'Aprovado')
                             ->where('id_schoolyear', $record->registration?->id_schoolyear)
-                            ->where(function ($query) use ($record, $studentNo) {
-                                $query
-                                    ->whereHas('students', fn ($q) => $q->where('students.id', $record->registration?->id_student))
-                                    ->orWhere('shift', 'like', '%'.$studentNo.'%');
-                            })
+                            ->whereNotNull('shift')
+                            ->where('shift', 'like', '%'.$studentNo.'%')
                             ->when($record->registration?->id_class, fn ($q, $id) => $q->whereHas('classes', fn ($qq) => $qq->where('classes.id', $id)))
                             ->when($record->registration?->id_schoolyear, fn ($q, $sy) => $q->where('id_schoolyear', $sy))
                             ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
-                            ->get();
+                            ->get()
+                            ->filter(fn (Schedule $schedule): bool => preg_match(
+                                '/(^|\D)'.preg_quote((string) $studentNo, '/').'($|\D)/',
+                                (string) $schedule->shift,
+                            ) === 1)
+                            ->values();
 
                         if ($candidates->isEmpty()) {
                             $generalSchedules = Schedule::query()
@@ -609,6 +611,13 @@ class RegistrationSubjectResource extends Resource
                                 ->get();
 
                             if ($generalSchedules->isEmpty()) {
+                                return 'Sem Turno';
+                            }
+
+                            // Em disciplinas com inscrição, só há horário automático
+                            // quando existe um único docente para a turma/disciplina.
+                            if ($record->subject?->student_can_enroll
+                                && $generalSchedules->pluck('id_teacher')->filter()->unique()->count() !== 1) {
                                 return 'Sem Turno';
                             }
 
@@ -673,9 +682,15 @@ class RegistrationSubjectResource extends Resource
                         $lineFor = function ($s) use ($fmt, $studentNo) {
                             $turno = (string) ($s->shift ?? '');
 
-                            $nums = $s->students
-                                ? $s->students->pluck('number')->map(fn ($n) => (string) $n)->unique()->values()
-                                : collect();
+                            preg_match_all('/\b[A-Za-z]?\d+\b/', $turno, $shiftNumbers);
+
+                            $nums = collect($shiftNumbers[0] ?? [])
+                                ->merge($s->students
+                                    ? $s->students->pluck('number')->map(fn ($n) => (string) $n)
+                                    : collect())
+                                ->map(fn ($number) => (string) $number)
+                                ->unique()
+                                ->values();
                             $isIndividual = $studentNo && $nums->count() === 1 && $nums->first() === (string) $studentNo;
 
                             $dia = $s->weekday?->weekday ?: '—';
