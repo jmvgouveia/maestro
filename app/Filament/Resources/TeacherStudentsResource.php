@@ -82,19 +82,8 @@ class TeacherStudentsResource extends Resource
                         ->whereColumn('schedules.id_subject', 'registrations_subjects.id_subject')
                         ->where('schedules.id_teacher', $teacherId)
                         ->where('schedules.id_schoolyear', $activeYear->id)
-                         ->where('schedules.status', 'Aprovado');
-                 })->orWhereExists(function ($scheduleQuery) use ($teacherId, $activeYear) {
-                     // Horário criado para a turma inteira, sem pivot individual do aluno.
-                     $scheduleQuery->selectRaw('1')
-                         ->from('schedules')
-                          ->join('schedules_classes', 'schedules_classes.id_schedule', '=', 'schedules.id')
-                          ->join('registrations', 'registrations.id', '=', 'registrations_subjects.id_registration')
-                          ->whereColumn('schedules_classes.id_class', 'registrations.id_class')
-                         ->whereColumn('schedules.id_subject', 'registrations_subjects.id_subject')
-                         ->where('schedules.id_teacher', $teacherId)
-                         ->where('schedules.id_schoolyear', $activeYear->id)
-                         ->whereIn('schedules.status', ['Aprovado', 'Aprovado DP']);
-                 });
+                        ->whereIn('schedules.status', ['Aprovado', 'Aprovado DP']);
+                });
             })
             ->with([
                 'subject',
