@@ -592,6 +592,7 @@ class RegistrationSubjectResource extends Resource
                             ->where(function ($query): void {
                                 $query->whereNull('shift')->orWhere('shift', '');
                             })
+                            ->whereDoesntHave('students')
                             ->with(['weekday', 'timeperiod', 'room', 'teacher', 'students'])
                             ->get();
 
