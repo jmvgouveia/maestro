@@ -165,9 +165,9 @@ class RegistrationSubjectResource extends Resource
 
                 $selectionOptions = [];
                 $selectionDescriptions = [];
-                $unavailableCards = [];
+                $disabledOptions = [];
 
-                $grouped->each(function ($group) use ($record, &$selectionOptions, &$selectionDescriptions, &$unavailableCards): void {
+                $grouped->each(function ($group) use ($record, &$selectionOptions, &$selectionDescriptions, &$disabledOptions): void {
                     /** @var Schedule $first */
                     $first = $group->first();
 
@@ -234,22 +234,14 @@ class RegistrationSubjectResource extends Resource
                         return;
                     }
 
-                    $unavailableCards[] = Section::make($first->teacher?->name ?: 'Professor a designar')
-                        ->icon('heroicon-o-user')
-                        ->compact()
-                        ->extraAttributes(['class' => 'schedule-shift-card schedule-shift-card-unavailable mb-3'])
-                        ->schema([
-                            Placeholder::make("resumo_turno_{$first->id}")
-                                ->label('Turno')
-                                ->content($first->shift ?: 'Turno'),
-                            Placeholder::make("horarios_{$first->id}")
-                                ->label('Horários')
-                                ->content(new HtmlString($slotSummary)),
-                            Placeholder::make("vagas_{$first->id}")
-                                ->label('Disponibilidade')
-                                ->content($availability),
-                        ])
-                        ->columns(3);
+                    $selectionOptions[$first->id] = $first->teacher?->name ?: 'Professor a designar';
+                    $selectionDescriptions[$first->id] = new HtmlString(sprintf(
+                        '<span class="turno-option-meta"><b>%s</b> <span>·</span> <b>%s</b></span><span class="turno-option-slots">%s</span>',
+                        e($first->shift ?: 'Turno'),
+                        e($availability),
+                        $slotSummary,
+                    ));
+                    $disabledOptions[] = $first->id;
                 });
 
                 $selectionOptions['none'] = 'Não selecionar turno';
@@ -264,12 +256,13 @@ class RegistrationSubjectResource extends Resource
                             ->hiddenLabel()
                             ->options($selectionOptions)
                             ->descriptions($selectionDescriptions)
+                            ->disableOptionWhen(fn ($value): bool => in_array((int) $value, $disabledOptions, true))
                             ->required()
                             ->columns(1)
                             ->extraAttributes(['class' => 'turno-selection-options']),
                     ]);
 
-                return array_merge([$selection], $unavailableCards);
+                return [$selection];
             });
     }
 

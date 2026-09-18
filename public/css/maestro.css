@@ -417,6 +417,12 @@
     box-shadow: 0 0 0 2px rgb(6 59 130 / 10%);
 }
 
+.turno-selection-options .fi-fo-radio > div > label:has(input:disabled) {
+    cursor: not-allowed;
+    background: #f8fafc;
+    opacity: 0.58;
+}
+
 .turno-selection-options .fi-fo-radio > div > label > div {
     gap: 0.2rem;
 }
