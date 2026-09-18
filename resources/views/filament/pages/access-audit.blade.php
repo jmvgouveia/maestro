@@ -7,6 +7,16 @@
                     placeholder="Nome ou e-mail"
                     class="fi-input block w-full rounded-lg border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800 md:w-72">
             </div>
+            <div>
+                <label for="access-role-filter" class="mb-1 block text-sm font-medium">Função</label>
+                <select id="access-role-filter" wire:model.live="roleFilterId"
+                    class="fi-input block w-full rounded-lg border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800 md:w-60">
+                    <option value="">Todas as funções</option>
+                    @foreach ($this->roleOptions() as $roleId => $roleName)
+                        <option value="{{ $roleId }}">{{ $roleName }}</option>
+                    @endforeach
+                </select>
+            </div>
             <label class="flex items-center gap-2 pb-2 text-sm">
                 <input type="checkbox" wire:model.live="onlyNeverLoggedIn"
                     class="rounded border-gray-300 text-primary-600 shadow-sm">
@@ -30,7 +40,8 @@
                             @if ($sortColumn === 'name') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
                     <th class="px-4 py-3 text-left"><button type="button" wire:click="sortBy('email')">E-mail
                             @if ($sortColumn === 'email') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
-                    <th class="px-4 py-3 text-left">Funções</th>
+                    <th class="px-4 py-3 text-left"><button type="button" wire:click="sortBy('roles')">Funções
+                            @if ($sortColumn === 'roles') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
                     <th class="px-4 py-3 text-left"><button type="button" wire:click="sortBy('last_login_at')">Último acesso
                             @if ($sortColumn === 'last_login_at') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
                 </tr>

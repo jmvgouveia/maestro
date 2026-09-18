@@ -6,6 +6,7 @@ use App\Models\User;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\WithPagination;
+use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccessAudit extends Page
@@ -28,6 +29,8 @@ class AccessAudit extends Page
 
     public bool $onlyNeverLoggedIn = false;
 
+    public ?int $roleFilterId = null;
+
     public string $sortColumn = 'name';
 
     public string $sortDirection = 'asc';
@@ -47,6 +50,11 @@ class AccessAudit extends Page
         $this->resetPage();
     }
 
+    public function updatedRoleFilterId(): void
+    {
+        $this->resetPage();
+    }
+
     public function showAllUsers(): void
     {
         $this->onlyNeverLoggedIn = false;
@@ -55,7 +63,7 @@ class AccessAudit extends Page
 
     public function sortBy(string $column): void
     {
-        if (! in_array($column, ['name', 'email', 'last_login_at'], true)) {
+        if (! in_array($column, ['name', 'email', 'roles', 'last_login_at'], true)) {
             return;
         }
 
@@ -67,6 +75,11 @@ class AccessAudit extends Page
         }
 
         $this->resetPage();
+    }
+
+    public function roleOptions(): array
+    {
+        return Role::query()->orderBy('name')->pluck('name', 'id')->all();
     }
 
     public function getUsersProperty(): LengthAwarePaginator
@@ -107,6 +120,14 @@ class AccessAudit extends Page
                     ->orWhere('email', 'like', '%'.$this->search.'%');
             }))
             ->when($this->onlyNeverLoggedIn, fn ($query) => $query->whereNull('last_login_at'))
-            ->orderBy($this->sortColumn, $this->sortDirection);
+            ->when($this->roleFilterId, fn ($query) => $query->whereHas('roles', fn ($roleQuery) => $roleQuery->whereKey($this->roleFilterId)))
+            ->when($this->sortColumn === 'roles', function ($query): void {
+                $direction = $this->sortDirection === 'asc' ? 'asc' : 'desc';
+                $query->orderByRaw(
+                    "(SELECT MIN(audit_roles.name) FROM roles AS audit_roles INNER JOIN model_has_roles AS audit_model_roles ON audit_model_roles.role_id = audit_roles.id WHERE audit_model_roles.model_id = users.id AND audit_model_roles.model_type = ?) {$direction}",
+                    [User::class],
+                );
+            })
+            ->when($this->sortColumn !== 'roles', fn ($query) => $query->orderBy($this->sortColumn, $this->sortDirection));
     }
 }
