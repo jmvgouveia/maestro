@@ -46,7 +46,6 @@ class Login extends \Filament\Pages\Auth\Login
         }
 
         if (! $user->isMfaExemptGuardian() && $user->hasTwoFactorEnabled()) {
-            session()->regenerate();
             session()->put([
                 'mfa.pending_user_id' => $user->getKey(),
                 'mfa.pending_remember' => (bool) ($data['remember'] ?? false),
