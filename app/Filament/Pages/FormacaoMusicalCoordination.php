@@ -33,6 +33,6 @@ class FormacaoMusicalCoordination extends Page
 
     protected static function musicalHasClassFilter(): bool
     {
-        return false;
+        return true;
     }
 }
