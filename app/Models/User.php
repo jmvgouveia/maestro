@@ -99,6 +99,12 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
         return $this->hasRole(self::ROLE_GUARDIAN);
     }
 
+    public function isMfaExemptGuardian(): bool
+    {
+        return $this->isGuardian()
+            && $this->getRoleNames()->diff([self::ROLE_GUARDIAN])->isEmpty();
+    }
+
     /**
      * Devolve o ID do aluno ativo validado contra os alunos associados ao EE.
      * Se houver apenas um aluno, seleciona-o automaticamente.

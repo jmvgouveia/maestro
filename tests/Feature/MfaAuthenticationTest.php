@@ -29,27 +29,51 @@ class MfaAuthenticationTest extends TestCase
     {
         $user = $this->createMfaUser();
 
-        Livewire::test(Login::class)
+        $login = Livewire::test(Login::class)
             ->fillForm([
                 'email' => $user->email,
                 'password' => 'password',
-                'two_factor_code' => '000000',
             ])
+            ->call('authenticate');
+
+        $login
+            ->fillForm(['two_factor_code' => '000000'])
             ->call('authenticate')
-            ->assertHasErrors(['data.email']);
+            ->assertHasErrors(['data.two_factor_code']);
 
         $this->assertGuest();
 
-        Livewire::test(Login::class)
+        $login = Livewire::test(Login::class)
             ->fillForm([
                 'email' => $user->email,
                 'password' => 'password',
-                'two_factor_code' => $user->makeTwoFactorCode(),
             ])
+            ->call('authenticate');
+
+        $login
+            ->fillForm(['two_factor_code' => $user->makeTwoFactorCode()])
             ->call('authenticate');
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame($user->getKey(), session(EnforceMfa::SESSION_KEY));
+    }
+
+    public function test_guardian_only_user_can_login_without_an_mfa_code(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(Role::findByName(User::ROLE_GUARDIAN));
+        $user->createTwoFactorAuth();
+        $user->enableTwoFactorAuth();
+
+        Livewire::test(Login::class)
+            ->fillForm([
+                'email' => $user->email,
+                'password' => 'password',
+            ])
+            ->call('authenticate');
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertNull(session(EnforceMfa::SESSION_KEY));
     }
 
     public function test_recovery_code_can_only_be_used_once(): void
@@ -57,7 +81,7 @@ class MfaAuthenticationTest extends TestCase
         $user = $this->createMfaUser();
         $recoveryCode = $user->getRecoveryCodes()->first()['code'];
 
-        Livewire::test(Login::class)
+        $login = Livewire::test(Login::class)
             ->fillForm([
                 'email' => $user->email,
                 'password' => 'password',
@@ -65,19 +89,26 @@ class MfaAuthenticationTest extends TestCase
             ])
             ->call('authenticate');
 
+        $login
+            ->fillForm(['two_factor_code' => $recoveryCode])
+            ->call('authenticate');
+
         $this->assertAuthenticatedAs($user);
 
         auth()->logout();
         session()->forget(EnforceMfa::SESSION_KEY);
 
-        Livewire::test(Login::class)
+        $login = Livewire::test(Login::class)
             ->fillForm([
                 'email' => $user->email,
                 'password' => 'password',
-                'two_factor_code' => $recoveryCode,
             ])
+            ->call('authenticate');
+
+        $login
+            ->fillForm(['two_factor_code' => $recoveryCode])
             ->call('authenticate')
-            ->assertHasErrors(['data.email']);
+            ->assertHasErrors(['data.two_factor_code']);
 
         $this->assertGuest();
     }

@@ -6,6 +6,7 @@ use App\Filament\Pages\MfaSetup;
 use App\Http\Middleware\EnforceMfa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class MfaEnforcementTest extends TestCase
@@ -44,5 +45,30 @@ class MfaEnforcementTest extends TestCase
             ->withSession([EnforceMfa::SESSION_KEY => $user->getKey()])
             ->get('/settings/profile')
             ->assertOk();
+    }
+
+    public function test_guardian_only_user_is_exempt_from_mfa(): void
+    {
+        $user = User::factory()->create(['mfa_grace_until' => now()->subSecond()]);
+        $user->assignRole(Role::findByName(User::ROLE_GUARDIAN));
+        $user->createTwoFactorAuth();
+        $user->confirmTwoFactorAuth($user->makeTwoFactorCode());
+
+        $this->actingAs($user)
+            ->get('/settings/profile')
+            ->assertOk();
+    }
+
+    public function test_guardian_with_another_role_is_not_exempt_from_mfa(): void
+    {
+        $user = User::factory()->create(['mfa_grace_until' => now()->subSecond()]);
+        $user->assignRole([
+            Role::findByName(User::ROLE_GUARDIAN),
+            Role::findByName('Professor'),
+        ]);
+
+        $this->actingAs($user)
+            ->get('/settings/profile')
+            ->assertRedirect(MfaSetup::getUrl(panel: 'admin'));
     }
 }

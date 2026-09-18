@@ -55,6 +55,10 @@ class EnforceMfa
             return redirect()->to(Filament::getPanel('admin')->getLoginUrl());
         }
 
+        if ($user->isMfaExemptGuardian()) {
+            return $next($request);
+        }
+
         if ($user->hasTwoFactorEnabled()) {
             if ((int) $request->session()->get(self::SESSION_KEY) === $user->getKey()) {
                 return $next($request);
