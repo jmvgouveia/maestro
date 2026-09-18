@@ -540,7 +540,10 @@ class RegistrationSubjectResource extends Resource
                 TextColumn::make('subject.name')
                     ->label('Disciplina')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->description(fn ($record): string => $record->registration?->class?->name
+                        ? 'Turma: '.$record->registration->class->name
+                        : 'Turma não definida'),
 
                 TextColumn::make('turno_display')
                     ->label('Horário')
@@ -1020,11 +1023,7 @@ class RegistrationSubjectResource extends Resource
             return 'Curso e turma não definidos';
         }
 
-        return sprintf(
-            'Cursos: %s · Turmas: %s',
-            $registrations->pluck('course.name')->filter()->unique()->implode(', ') ?: 'Não definidos',
-            $registrations->pluck('class.name')->filter()->unique()->implode(', ') ?: 'Não definidas',
-        );
+        return 'Cursos: '.($registrations->pluck('course.name')->filter()->unique()->implode(', ') ?: 'Não definidos');
     }
 
     public static function getRelations(): array
