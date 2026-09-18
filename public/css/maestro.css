@@ -459,6 +459,11 @@
     border-radius: 999px;
     font-size: 0.72rem;
     font-weight: 700;
+    display: inline-flex;
+    justify-content: center;
+    margin-left: auto;
+    max-width: 100%;
+    width: 14rem;
     padding: 0.2rem 0.55rem;
     text-align: right;
     white-space: nowrap;
@@ -495,6 +500,8 @@
     }
 
     .turno-option-availability {
+        margin-left: 0;
+        width: auto;
         text-align: left;
     }
 }
