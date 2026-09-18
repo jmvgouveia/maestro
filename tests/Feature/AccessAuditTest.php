@@ -1,0 +1,48 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Filament\Pages\AccessAudit;
+use App\Filament\Pages\StudentsWithoutSchedule;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+class AccessAuditTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_only_super_admin_can_access_access_audit(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $this->assertFalse(AccessAudit::canAccess());
+        $this->assertFalse(StudentsWithoutSchedule::canAccess());
+
+        $user->assignRole(Role::findByName('Super Admin'));
+
+        $this->assertTrue(AccessAudit::canAccess());
+        $this->assertTrue(StudentsWithoutSchedule::canAccess());
+    }
+
+    public function test_audit_can_filter_users_who_never_logged_in(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole(Role::findByName('Super Admin'));
+        $neverLoggedIn = User::factory()->create(['name' => 'Nunca Entrou']);
+        $loggedIn = User::factory()->create([
+            'name' => 'Ja Entrou',
+            'last_login_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(AccessAudit::class)
+            ->set('onlyNeverLoggedIn', true)
+            ->assertSee('Nunca Entrou')
+            ->assertDontSee('Ja Entrou');
+    }
+}

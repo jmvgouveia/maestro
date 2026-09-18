@@ -91,11 +91,6 @@ class UserResource extends Resource
                     ->sortable()
                     ->icon('heroicon-m-envelope')
                     ->iconColor('primary'),
-                TextColumn::make('last_login_at')
-                    ->label('Último acesso')
-                    ->dateTime('d/m/Y H:i')
-                    ->placeholder('Nunca entrou')
-                    ->sortable(),
                 TextColumn::make('mfa_status')
                     ->label('MFA')
                     ->state(fn (User $record): string => $record->hasTwoFactorEnabled() ? 'Ativa' : 'Pendente')
@@ -118,9 +113,6 @@ class UserResource extends Resource
                     ->relationship('roles', 'name')
                     ->multiple()
                     ->preload(),
-                Tables\Filters\Filter::make('never_logged_in')
-                    ->label('Nunca entrou na plataforma')
-                    ->query(fn ($query) => $query->whereNull('last_login_at')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
