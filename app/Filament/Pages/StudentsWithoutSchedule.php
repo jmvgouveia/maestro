@@ -38,6 +38,8 @@ class StudentsWithoutSchedule extends Page
 
     public string $scheduleFilter = 'all';
 
+    public string $sortDirection = 'asc';
+
     public static function canAccess(): bool
     {
         return auth()->user()?->can('view students without schedule audit') ?? false;
@@ -65,6 +67,12 @@ class StudentsWithoutSchedule extends Page
 
     public function updatedScheduleFilter(): void
     {
+        $this->resetPage();
+    }
+
+    public function sortByShift(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         $this->resetPage();
     }
 
@@ -133,12 +141,15 @@ class StudentsWithoutSchedule extends Page
         $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
 
         return RegistrationSubject::query()
+            ->leftJoin('schedules', 'schedules.id', '=', 'registrations_subjects.id_schedule')
+            ->select('registrations_subjects.*')
             ->whereHas('subject', fn ($query) => $query
                 ->where('student_can_enroll', true)
                 ->where('status', true)
                 ->when($this->subjectFilterId, fn ($subjectQuery) => $subjectQuery->whereKey($this->subjectFilterId)))
             ->whereHas('registration', fn ($query) => $query->where('id_schoolyear', $schoolYearId))
-            ->when($this->scheduleFilter === 'without_schedule', fn ($query) => $query->whereNull('id_schedule'))
+            ->when($this->scheduleFilter === 'without_schedule', fn ($query) => $query->whereNull('registrations_subjects.id_schedule'))
+            ->when($this->scheduleFilter === 'with_schedule', fn ($query) => $query->whereNotNull('registrations_subjects.id_schedule'))
             ->with(['subject', 'registration.student', 'registration.class.buildings', 'selectedSchedule'])
             ->when($this->buildingFilterId, fn ($query) => $query->whereHas('registration.class.buildings', fn ($buildingQuery) => $buildingQuery->whereKey($this->buildingFilterId)))
             ->when($this->classFilterId, fn ($query) => $query->whereHas('registration', fn ($registrationQuery) => $registrationQuery->where('id_class', $this->classFilterId)))
@@ -149,7 +160,8 @@ class StudentsWithoutSchedule extends Page
                             ->orWhere('number', 'like', '%'.$this->search.'%');
                     });
             }))
-            ->orderBy('id');
+            ->orderBy('schedules.shift', $this->sortDirection)
+            ->orderBy('registrations_subjects.id');
     }
 
     protected function activeSchoolYearId(): ?int

@@ -42,6 +42,7 @@
                 <select id="students-without-schedule-status" wire:model.live="scheduleFilter"
                     class="fi-input block w-full rounded-lg border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800 md:w-52">
                     <option value="all">Todos</option>
+                    <option value="with_schedule">Apenas com turno</option>
                     <option value="without_schedule">Apenas sem turno</option>
                 </select>
             </div>
@@ -65,7 +66,8 @@
                     <th class="px-4 py-3 text-left">Turma</th>
                     <th class="px-4 py-3 text-left">Núcleo</th>
                     <th class="px-4 py-3 text-left">Disciplina</th>
-                    <th class="px-4 py-3 text-left">Turno</th>
+                    <th class="px-4 py-3 text-left"><button type="button" wire:click="sortByShift">Turno
+                            {{ $sortDirection === 'asc' ? '↑' : '↓' }}</button></th>
                     <th class="px-4 py-3 text-left">E-mail</th>
                 </tr>
             </thead>
