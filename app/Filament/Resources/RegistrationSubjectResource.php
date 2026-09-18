@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\RegistrationSubjectResource\RelationManagers;
 use App\Models\RegistrationSubject;
+use App\Models\Registration;
 use App\Models\Schedule;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Card;
@@ -534,6 +535,7 @@ class RegistrationSubjectResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading(fn (): string => self::activeStudentContext())
             ->columns([
                 TextColumn::make('subject.name')
                     ->label('Disciplina')
@@ -995,6 +997,34 @@ class RegistrationSubjectResource extends Resource
                     });
             })
             ->count();
+    }
+
+    private static function activeStudentContext(): string
+    {
+        $user = Auth::user();
+        $studentId = $user?->isGuardian()
+            ? $user->activeGuardianStudentId()
+            : $user?->student?->id;
+
+        if (! $studentId) {
+            return 'Curso e turma';
+        }
+
+        $registrations = Registration::query()
+            ->with(['course', 'class'])
+            ->where('id_student', $studentId)
+            ->whereHas('schoolyear', fn ($query) => $query->where('active', true))
+            ->get();
+
+        if ($registrations->isEmpty()) {
+            return 'Curso e turma não definidos';
+        }
+
+        return sprintf(
+            'Cursos: %s · Turmas: %s',
+            $registrations->pluck('course.name')->filter()->unique()->implode(', ') ?: 'Não definidos',
+            $registrations->pluck('class.name')->filter()->unique()->implode(', ') ?: 'Não definidas',
+        );
     }
 
     public static function getRelations(): array
