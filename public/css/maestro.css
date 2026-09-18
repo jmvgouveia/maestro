@@ -403,11 +403,16 @@
 
 .turno-selection-options .fi-fo-radio > div > label {
     display: block;
+    width: 100%;
     border: 1px solid #dbe4f0;
     border-radius: 0.75rem;
     background: #ffffff;
     padding: 0.85rem 1rem;
     transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.turno-selection-options .fi-fo-radio > div {
+    width: 100%;
 }
 
 .turno-selection-options .fi-fo-radio > div > label:hover,
@@ -425,6 +430,7 @@
 
 .turno-selection-options .fi-fo-radio > div > label > div {
     gap: 0.2rem;
+    width: 100%;
 }
 
 .turno-selection-options .fi-fo-radio > div > label > div > span {
