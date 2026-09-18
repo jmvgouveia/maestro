@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use Illuminate\Auth\Access\Response;
 use App\Models\ScheduleRequest;
 use App\Models\User;
 
@@ -47,6 +46,11 @@ class ScheduleRequestPolicy
      */
     public function delete(User $user, ScheduleRequest $schedulerequest): bool
     {
+        if ($user->isTeacher()) {
+            return in_array($schedulerequest->status, ['Pendente', 'Recusado', 'Aprovado DP'], true)
+                && (int) $schedulerequest->id_teacher_requester === (int) $user->teacher?->getKey();
+        }
+
         return $user->checkPermissionTo('delete ScheduleRequest');
     }
 

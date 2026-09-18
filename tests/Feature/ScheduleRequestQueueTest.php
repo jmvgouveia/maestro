@@ -5,8 +5,11 @@ namespace Tests\Feature;
 use App\Helpers\ScheduleRequestQueueHelper;
 use App\Models\Schedule;
 use App\Models\ScheduleRequest;
+use App\Models\User;
+use App\Policies\ScheduleRequestPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ScheduleRequestQueueTest extends TestCase
@@ -86,6 +89,32 @@ class ScheduleRequestQueueTest extends TestCase
             'id' => $request->id,
             'status' => 'Eliminado DP',
         ]);
+    }
+
+    public function test_teacher_can_delete_only_own_cancellable_request(): void
+    {
+        $fixture = $this->createFixture();
+        $request = ScheduleRequest::create([
+            ...$this->requestData($fixture),
+            'status' => 'Recusado',
+        ]);
+
+        $requesterUser = User::factory()->create();
+        $requesterUser->assignRole(Role::findByName('Professor'));
+        DB::table('teachers')->where('id', $fixture['requester']->id)->update([
+            'id_user' => $requesterUser->id,
+        ]);
+
+        $ownerUser = User::factory()->create();
+        $ownerUser->assignRole(Role::findByName('Professor'));
+        DB::table('teachers')->where('id', $fixture['owner']->id)->update([
+            'id_user' => $ownerUser->id,
+        ]);
+
+        $policy = app(ScheduleRequestPolicy::class);
+
+        $this->assertTrue($policy->delete($requesterUser, $request->fresh()));
+        $this->assertFalse($policy->delete($ownerUser, $request->fresh()));
     }
 
     private function requestData(array $fixture): array
