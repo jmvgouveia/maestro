@@ -221,27 +221,23 @@ class RegistrationSubjectResource extends Resource
                     $availability = $temVagaNoTurno
                         ? "{$available} vagas disponíveis de {$limit}"
                         : 'Vagas preenchidas';
+                    $availabilityClass = $temVagaNoTurno && $limit > 0 && ($available / $limit) < 0.5
+                        ? 'turno-option-availability-low'
+                        : ($temVagaNoTurno ? 'turno-option-availability-medium' : 'turno-option-availability-full');
+                    $optionId = $temVagaNoTurno ? $selectedScheduleId : $first->id;
 
-                    if ($temVagaNoTurno) {
-                        $selectionOptions[$selectedScheduleId] = $first->teacher?->name ?: 'Professor a designar';
-                        $selectionDescriptions[$selectedScheduleId] = new HtmlString(sprintf(
-                            '<span class="turno-option-meta"><b>%s</b> <span>·</span> <b>%s</b></span><span class="turno-option-slots">%s</span>',
-                            e($first->shift ?: 'Turno'),
-                            e($availability),
-                            $slotSummary,
-                        ));
-
-                        return;
-                    }
-
-                    $selectionOptions[$first->id] = $first->teacher?->name ?: 'Professor a designar';
-                    $selectionDescriptions[$first->id] = new HtmlString(sprintf(
-                        '<span class="turno-option-meta"><b>%s</b> <span>·</span> <b>%s</b></span><span class="turno-option-slots">%s</span>',
+                    $selectionOptions[$optionId] = $first->teacher?->name ?: 'Professor a designar';
+                    $selectionDescriptions[$optionId] = new HtmlString(sprintf(
+                        '<span class="turno-option-meta"><span class="turno-option-shift">%s</span><span class="turno-option-availability %s">%s</span></span><span class="turno-option-slots">%s</span>',
                         e($first->shift ?: 'Turno'),
+                        $availabilityClass,
                         e($availability),
                         $slotSummary,
                     ));
-                    $disabledOptions[] = $first->id;
+
+                    if (! $temVagaNoTurno) {
+                        $disabledOptions[] = $optionId;
+                    }
                 });
 
                 $selectionOptions['none'] = 'Não selecionar turno';

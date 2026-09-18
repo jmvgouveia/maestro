@@ -438,16 +438,45 @@
 }
 
 .turno-option-meta {
+    align-items: center;
     color: var(--maestro-text);
+    display: flex;
     font-size: 0.8rem;
     font-weight: 400;
+    justify-content: space-between;
+    gap: 1rem;
     margin-top: 0.25rem;
 }
 
-.turno-option-meta b {
+.turno-option-shift {
     color: var(--maestro-secondary);
     font-size: 0.7rem;
+    font-weight: 700;
     text-transform: uppercase;
+}
+
+.turno-option-availability {
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.turno-option-availability-low {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.turno-option-availability-medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.turno-option-availability-full {
+    background: #fee2e2;
+    color: #b91c1c;
 }
 
 .turno-option-slots {
@@ -456,6 +485,18 @@
     font-weight: 400;
     line-height: 1.5;
     margin-top: 0.35rem;
+}
+
+@media (max-width: 640px) {
+    .turno-option-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .turno-option-availability {
+        text-align: left;
+    }
 }
 
 .schedule-shift-card-unavailable {
