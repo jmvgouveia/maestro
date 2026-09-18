@@ -4,8 +4,24 @@
             <x-filament::section>
                 <x-slot name="heading">Configure a autenticação multifator</x-slot>
 
+                <div class="mb-6 rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950/30 dark:text-primary-100">
+                    <p class="mb-3 font-semibold">Siga estes passos:</p>
+                    <ol class="list-decimal space-y-2 ps-5">
+                        <li>Instale uma aplicação autenticadora no telemóvel, como o <strong>Microsoft Authenticator</strong> ou o Google Authenticator.</li>
+                        <li>Abra a aplicação e escolha <strong>Adicionar conta</strong> ou o símbolo <strong>+</strong>.</li>
+                        <li>Escolha <strong>Outra conta</strong>, <strong>Conta profissional ou escolar</strong> ou <strong>Digitalizar código QR</strong>, conforme a aplicação.</li>
+                        <li>Aponte a câmara da aplicação autenticadora para o código QR apresentado abaixo.</li>
+                        <li>Introduza aqui o código de 6 dígitos que a aplicação gerar e selecione <strong>Ativar autenticação multifator</strong>.</li>
+                    </ol>
+                </div>
+
+                <div class="mb-6 rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-900 dark:border-warning-800 dark:bg-warning-950/30 dark:text-warning-100">
+                    <p class="font-semibold">Importante</p>
+                    <p class="mt-1">Não utilize a aplicação Câmara do telemóvel para ler este código. A câmara apenas reconhece o QR Code, mas não configura a autenticação. Tem de abrir primeiro o Microsoft Authenticator ou outra aplicação autenticadora e usar a opção <strong>Digitalizar código QR</strong> dentro dessa aplicação.</p>
+                </div>
+
                 <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                    Digitalize o código QR com a sua aplicação autenticadora e introduza o código apresentado.
+                    Mantenha esta página aberta enquanto configura a conta no telemóvel.
                 </p>
 
                 @if ($qrCode)
