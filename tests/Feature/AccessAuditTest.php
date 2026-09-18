@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Pages\AccessAudit;
 use App\Filament\Pages\StudentsWithoutSchedule;
 use App\Filament\Pages\TeacherSubjectShiftAudit;
+use App\Filament\Resources\ScheduleResource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -47,5 +48,20 @@ class AccessAuditTest extends TestCase
             ->set('onlyNeverLoggedIn', true)
             ->assertSee('Nunca Entrou')
             ->assertDontSee('Ja Entrou');
+    }
+
+    public function test_gestor_de_horarios_can_access_schedule_resource_but_not_audits(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole(Role::findByName('Gestor de Horários'));
+        $this->actingAs($user);
+
+        $this->assertTrue($user->can('view Schedule'));
+        $this->assertTrue($user->can('update Schedule'));
+        $this->assertFalse($user->can('create Schedule'));
+        $this->assertFalse($user->can('delete Schedule'));
+        $this->assertTrue(ScheduleResource::canViewAny());
+        $this->assertFalse(AccessAudit::canAccess());
+        $this->assertFalse(TeacherSubjectShiftAudit::canAccess());
     }
 }

@@ -136,6 +136,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view students without schedule audit',
                 'view teacher subject shift audit',
             ],
+            'Gestor de Horários' => [
+                'view Schedule',
+                'view-any Schedule',
+                'update Schedule',
+            ],
             'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
             'Encarregado de Educação' => [],

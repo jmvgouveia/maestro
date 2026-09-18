@@ -52,7 +52,9 @@ trait ChecksScheduleConflicts
         $subject = Subject::find($data['id_subject']);
         $tipo = strtolower($subject->type ?? 'letiva');
 
-        $teacher = Teacher::where('id_user', Filament::auth()->id())->first();
+        $teacher = ! empty($data['id_teacher'])
+            ? Teacher::find($data['id_teacher'])
+            : ($this->record?->teacher ?? Teacher::where('id_user', Filament::auth()->id())->first());
 
         if (!$teacher) {
             Notification::make()
@@ -84,7 +86,9 @@ trait ChecksScheduleConflicts
         }
         $this->checkRoomBlocked($data['id_room'], $data['id_weekday'], $data['id_timeperiod']);
         $this->checkHoursDaily($teacher->id, $data['id_weekday']);
-        $this->checkWorkload($teacher->id, $tipo);
+        if (! Filament::auth()->user()?->hasRole('Gestor de Horários')) {
+            $this->checkWorkload($teacher->id, $tipo);
+        }
     }
 
 

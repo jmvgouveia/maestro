@@ -182,6 +182,7 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Coordenador de Formação Musical',
                 'Coordenador de Iniciação Musical',
                 'Auditoria',
+                'Gestor de Horários',
             ]);
     }
 
