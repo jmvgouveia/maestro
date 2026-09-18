@@ -218,7 +218,9 @@ class RegistrationSubjectResource extends Resource
                     $slotSummary = collect($slotLines)
                         ->map(fn (string $line): string => e($line))
                         ->implode(' <span class="text-gray-400">·</span> ');
-                    $availability = $temVagaNoTurno ? "{$available} de {$limit}" : 'Vagas preenchidas';
+                    $availability = $temVagaNoTurno
+                        ? "{$available} vagas disponíveis de {$limit}"
+                        : 'Vagas preenchidas';
 
                     if ($temVagaNoTurno) {
                         $selectionOptions[$selectedScheduleId] = $first->teacher?->name ?: 'Professor a designar';
