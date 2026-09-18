@@ -10,8 +10,8 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -164,8 +164,10 @@ class RegistrationSubjectResource extends Resource
                 });
 
                 $selectionOptions = [];
+                $selectionDescriptions = [];
+                $unavailableCards = [];
 
-                $shiftCards = $grouped->map(function ($group) use ($record, &$selectionOptions) {
+                $grouped->each(function ($group) use ($record, &$selectionOptions, &$selectionDescriptions, &$unavailableCards): void {
                     /** @var Schedule $first */
                     $first = $group->first();
 
@@ -193,63 +195,59 @@ class RegistrationSubjectResource extends Resource
 
                     $temVagaNoTurno = $selectedScheduleId !== null;
 
-                    if ($temVagaNoTurno) {
-                        $selectionOptions[$selectedScheduleId] = trim(sprintf(
-                            '%s · Prof. %s · %d %s',
-                            $first->shift ?: 'Turno',
-                            $first->teacher?->name ?: '—',
-                            $available,
-                            $available === 1 ? 'vaga' : 'vagas',
-                        ));
-                    }
-
                     $slotSummary = collect($slotLines)
                         ->map(fn (string $line): string => e($line))
                         ->implode(' <span class="text-gray-400">·</span> ');
                     $availability = $temVagaNoTurno ? "{$available} de {$limit}" : 'Vagas preenchidas';
 
-                    return Section::make("Professor: {$first->teacher?->name}")
+                    if ($temVagaNoTurno) {
+                        $selectionOptions[$selectedScheduleId] = $first->shift ?: 'Turno';
+                        $selectionDescriptions[$selectedScheduleId] = new HtmlString(sprintf(
+                            '<span class="turno-option-meta"><b>Prof.</b> %s <span>·</span> <b>%s</b></span><span class="turno-option-slots">%s</span>',
+                            e($first->teacher?->name ?: 'Professor a designar'),
+                            e($availability),
+                            $slotSummary,
+                        ));
+
+                        return;
+                    }
+
+                    $unavailableCards[] = Section::make($first->shift ?: 'Turno')
                         ->icon('heroicon-o-user')
                         ->compact()
-                        ->extraAttributes([
-                            'class' => 'schedule-shift-card mb-3',
-                        ])
+                        ->extraAttributes(['class' => 'schedule-shift-card schedule-shift-card-unavailable mb-3'])
                         ->schema([
                             Placeholder::make("resumo_turno_{$first->id}")
-                                ->label(false)
-                                ->content(new HtmlString(sprintf(
-                                     '<div class="schedule-shift-summary-inner"><span><b>TURNO</b><strong>%s</strong></span><span><b>VAGAS</b><strong>%s</strong></span></div>',
-                                     e($first->shift ?: '—'),
-                                     e($availability),
-                                 )))
-                                ->extraAttributes(['class' => 'schedule-shift-summary'])
-                                ->columnSpanFull(),
-
+                                ->label('Professor')
+                                ->content($first->teacher?->name ?: 'Professor a designar'),
                             Placeholder::make("horarios_{$first->id}")
                                 ->label('Horários')
-                                ->content(new HtmlString('<span class="text-sm text-gray-600 dark:text-gray-300">'.$slotSummary.'</span>'))
-                                ->columnSpanFull()
-                                ->extraAttributes(['class' => $temVagaNoTurno ? 'schedule-slots' : 'schedule-slots opacity-60']),
+                                ->content(new HtmlString($slotSummary)),
+                            Placeholder::make("vagas_{$first->id}")
+                                ->label('Disponibilidade')
+                                ->content($availability),
                         ])
-                        ->columns(1);
-                })->values()->toArray();
+                        ->columns(3);
+                });
 
                 $selectionOptions['none'] = 'Não selecionar turno';
+                $selectionDescriptions['none'] = 'Pode continuar sem um turno selecionado.';
 
                 $selection = Section::make('Escolher turno')
                     ->icon('heroicon-o-check-circle')
                     ->compact()
                     ->extraAttributes(['class' => 'schedule-selection'])
                     ->schema([
-                        ToggleButtons::make('id_schedule')
+                        Radio::make('id_schedule')
                             ->hiddenLabel()
                             ->options($selectionOptions)
-                            ->reactive()
+                            ->descriptions($selectionDescriptions)
                             ->required()
-                            ->columns(1),
+                            ->columns(1)
+                            ->extraAttributes(['class' => 'turno-selection-options']),
                     ]);
 
-                return array_merge($shiftCards, [$selection]);
+                return array_merge([$selection], $unavailableCards);
             });
     }
 

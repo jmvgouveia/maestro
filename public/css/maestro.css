@@ -401,6 +401,64 @@
     color: #ffffff !important;
 }
 
+.turno-selection-options .fi-fo-radio > div > label {
+    display: block;
+    border: 1px solid #dbe4f0;
+    border-radius: 0.75rem;
+    background: #ffffff;
+    padding: 0.85rem 1rem;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.turno-selection-options .fi-fo-radio > div > label:hover,
+.turno-selection-options .fi-fo-radio > div > label:has(input:checked) {
+    border-color: var(--maestro-blue);
+    background: #f0f6ff;
+    box-shadow: 0 0 0 2px rgb(6 59 130 / 10%);
+}
+
+.turno-selection-options .fi-fo-radio > div > label > div {
+    gap: 0.2rem;
+}
+
+.turno-selection-options .fi-fo-radio > div > label > div > span {
+    color: var(--maestro-blue);
+    font-weight: 700;
+}
+
+.turno-option-meta,
+.turno-option-slots {
+    display: block;
+}
+
+.turno-option-meta {
+    color: var(--maestro-text);
+    font-size: 0.8rem;
+    font-weight: 400;
+    margin-top: 0.25rem;
+}
+
+.turno-option-meta b {
+    color: var(--maestro-secondary);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.turno-option-slots {
+    color: var(--maestro-secondary);
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.5;
+    margin-top: 0.35rem;
+}
+
+.schedule-shift-card-unavailable {
+    border-left-color: #94a3b8 !important;
+    background: #f8fafc !important;
+    box-shadow: none;
+    opacity: 0.8;
+}
+
 /* Cores do modo escuro */
 .dark .fi-body,
 .dark .fi-main-ctn,
