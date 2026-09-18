@@ -28,9 +28,13 @@ class AccessAudit extends Page
 
     public bool $onlyNeverLoggedIn = false;
 
+    public string $sortColumn = 'name';
+
+    public string $sortDirection = 'asc';
+
     public static function canAccess(): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        return auth()->user()?->can('view access audit') ?? false;
     }
 
     public function updatedSearch(): void
@@ -40,6 +44,28 @@ class AccessAudit extends Page
 
     public function updatedOnlyNeverLoggedIn(): void
     {
+        $this->resetPage();
+    }
+
+    public function showAllUsers(): void
+    {
+        $this->onlyNeverLoggedIn = false;
+        $this->resetPage();
+    }
+
+    public function sortBy(string $column): void
+    {
+        if (! in_array($column, ['name', 'email', 'last_login_at'], true)) {
+            return;
+        }
+
+        if ($this->sortColumn === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortColumn = $column;
+            $this->sortDirection = 'asc';
+        }
+
         $this->resetPage();
     }
 
@@ -81,7 +107,6 @@ class AccessAudit extends Page
                     ->orWhere('email', 'like', '%'.$this->search.'%');
             }))
             ->when($this->onlyNeverLoggedIn, fn ($query) => $query->whereNull('last_login_at'))
-            ->orderByRaw('last_login_at IS NOT NULL')
-            ->orderBy('name');
+            ->orderBy($this->sortColumn, $this->sortDirection);
     }
 }

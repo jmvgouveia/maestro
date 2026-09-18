@@ -12,6 +12,9 @@
                     class="rounded border-gray-300 text-primary-600 shadow-sm">
                 <span>Nunca entrou na plataforma</span>
             </label>
+            <x-filament::button color="gray" size="sm" wire:click="showAllUsers">
+                Todos
+            </x-filament::button>
         </div>
 
         <x-filament::button wire:click="exportUsers" icon="heroicon-o-arrow-down-tray">
@@ -23,10 +26,13 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                    <th class="px-4 py-3 text-left">Nome</th>
-                    <th class="px-4 py-3 text-left">E-mail</th>
+                    <th class="px-4 py-3 text-left"><button type="button" wire:click="sortBy('name')">Nome
+                            @if ($sortColumn === 'name') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
+                    <th class="px-4 py-3 text-left"><button type="button" wire:click="sortBy('email')">E-mail
+                            @if ($sortColumn === 'email') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
                     <th class="px-4 py-3 text-left">Funções</th>
-                    <th class="px-4 py-3 text-left">Último acesso</th>
+                    <th class="px-4 py-3 text-left"><button type="button" wire:click="sortBy('last_login_at')">Último acesso
+                            @if ($sortColumn === 'last_login_at') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif</button></th>
                 </tr>
             </thead>
             <tbody>

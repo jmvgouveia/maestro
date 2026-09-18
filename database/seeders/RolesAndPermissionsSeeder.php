@@ -131,6 +131,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'Coordenador de Iniciação Musical' => [
                 'view iniciacao musical coordination',
             ],
+            'Auditoria' => [
+                'view access audit',
+                'view students without schedule audit',
+            ],
             'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
             'Encarregado de Educação' => [],

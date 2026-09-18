@@ -181,6 +181,7 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Horário/Sala',
                 'Coordenador de Formação Musical',
                 'Coordenador de Iniciação Musical',
+                'Auditoria',
             ]);
     }
 

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Building;
+use App\Models\Classes;
 use App\Models\RegistrationSubject;
 use App\Models\SchoolYear;
 use App\Models\Subject;
@@ -30,9 +32,13 @@ class StudentsWithoutSchedule extends Page
 
     public ?int $subjectFilterId = null;
 
+    public ?int $buildingFilterId = null;
+
+    public ?int $classFilterId = null;
+
     public static function canAccess(): bool
     {
-        return auth()->user()?->isSuperAdmin() ?? false;
+        return auth()->user()?->can('view students without schedule audit') ?? false;
     }
 
     public function updatedSearch(): void
@@ -45,11 +51,39 @@ class StudentsWithoutSchedule extends Page
         $this->resetPage();
     }
 
+    public function updatedBuildingFilterId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedClassFilterId(): void
+    {
+        $this->resetPage();
+    }
+
     public function subjectOptions(): array
     {
         return Subject::query()
             ->where('student_can_enroll', true)
             ->where('status', true)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    public function buildingOptions(): array
+    {
+        return Building::query()
+            ->whereHas('classes.registrations', fn ($query) => $query->where('id_schoolyear', $this->activeSchoolYearId()))
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    public function classOptions(): array
+    {
+        return Classes::query()
+            ->whereHas('registrations', fn ($query) => $query->where('id_schoolyear', $this->activeSchoolYearId()))
             ->orderBy('name')
             ->pluck('name', 'id')
             ->all();
@@ -67,13 +101,14 @@ class StudentsWithoutSchedule extends Page
         return response()->streamDownload(function () use ($rows): void {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Número', 'Aluno', 'Turma', 'Disciplina', 'E-mail do aluno'], ';');
+            fputcsv($handle, ['Número', 'Aluno', 'Turma', 'Núcleo', 'Disciplina', 'E-mail do aluno'], ';');
 
             foreach ($rows as $row) {
                 fputcsv($handle, [
                     $row->registration?->student?->number,
                     $row->registration?->student?->name,
                     $row->registration?->class?->name,
+                    $row->registration?->class?->buildings?->pluck('name')->implode(', ') ?: '—',
                     $row->subject?->name,
                     $row->registration?->student?->email ?? '—',
                 ], ';');
@@ -96,7 +131,9 @@ class StudentsWithoutSchedule extends Page
                 ->where('status', true)
                 ->when($this->subjectFilterId, fn ($subjectQuery) => $subjectQuery->whereKey($this->subjectFilterId)))
             ->whereHas('registration', fn ($query) => $query->where('id_schoolyear', $schoolYearId))
-            ->with(['subject', 'registration.student', 'registration.class'])
+            ->with(['subject', 'registration.student', 'registration.class.buildings'])
+            ->when($this->buildingFilterId, fn ($query) => $query->whereHas('registration.class.buildings', fn ($buildingQuery) => $buildingQuery->whereKey($this->buildingFilterId)))
+            ->when($this->classFilterId, fn ($query) => $query->whereHas('registration', fn ($registrationQuery) => $registrationQuery->where('id_class', $this->classFilterId)))
             ->when($this->search !== '', fn ($query) => $query->where(function ($query): void {
                 $query->whereHas('subject', fn ($subjectQuery) => $subjectQuery->where('name', 'like', '%'.$this->search.'%'))
                     ->orWhereHas('registration.student', function ($studentQuery): void {
@@ -105,5 +142,10 @@ class StudentsWithoutSchedule extends Page
                     });
             }))
             ->orderBy('id');
+    }
+
+    protected function activeSchoolYearId(): ?int
+    {
+        return SchoolYear::query()->where('active', true)->value('id');
     }
 }

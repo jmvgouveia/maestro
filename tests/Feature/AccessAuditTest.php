@@ -14,7 +14,7 @@ class AccessAuditTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_only_super_admin_can_access_access_audit(): void
+    public function test_only_auditoria_role_can_access_audit_pages(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -22,7 +22,7 @@ class AccessAuditTest extends TestCase
         $this->assertFalse(AccessAudit::canAccess());
         $this->assertFalse(StudentsWithoutSchedule::canAccess());
 
-        $user->assignRole(Role::findByName('Super Admin'));
+        $user->assignRole(Role::findByName('Auditoria'));
 
         $this->assertTrue(AccessAudit::canAccess());
         $this->assertTrue(StudentsWithoutSchedule::canAccess());
@@ -31,7 +31,7 @@ class AccessAuditTest extends TestCase
     public function test_audit_can_filter_users_who_never_logged_in(): void
     {
         $admin = User::factory()->create();
-        $admin->assignRole(Role::findByName('Super Admin'));
+        $admin->assignRole(Role::findByName('Auditoria'));
         $neverLoggedIn = User::factory()->create(['name' => 'Nunca Entrou']);
         $loggedIn = User::factory()->create([
             'name' => 'Ja Entrou',
