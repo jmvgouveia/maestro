@@ -30,4 +30,9 @@ class IniciacaoMusicalCoordination extends Page
     {
         return 'view iniciacao musical coordination';
     }
+
+    protected static function musicalHasClassFilter(): bool
+    {
+        return true;
+    }
 }

@@ -30,4 +30,9 @@ class FormacaoMusicalCoordination extends Page
     {
         return 'view formacao musical coordination';
     }
+
+    protected static function musicalHasClassFilter(): bool
+    {
+        return false;
+    }
 }

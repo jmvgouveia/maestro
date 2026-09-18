@@ -1,4 +1,17 @@
 <x-filament::page>
+    @if ($this->hasMusicalClassFilter())
+        <div class="mb-4 max-w-sm">
+            <label for="musical-class-filter" class="mb-1 block text-sm font-medium">Turma</label>
+            <select id="musical-class-filter" wire:model.live="classFilterId"
+                class="fi-input block w-full rounded-lg border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800">
+                <option value="">Todas as turmas</option>
+                @foreach ($this->musicalClassOptions() as $classId => $className)
+                    <option value="{{ $classId }}">{{ $className }}</option>
+                @endforeach
+            </select>
+        </div>
+    @endif
+
     <div class="flex justify-end mb-4">
         <x-filament::button wire:click="exportMusicalGroups" icon="heroicon-o-arrow-down-tray">
             Exportar CSV

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Concerns;
 
+use App\Models\Classes;
 use App\Models\RegistrationSubject;
 use App\Models\Schedule;
 use App\Models\SchoolYear;
@@ -14,9 +15,39 @@ trait HasMusicalCoordination
 {
     public ?int $selectedMusicalGroup = null;
 
+    public ?int $classFilterId = null;
+
     abstract protected static function musicalSubjectName(): string;
 
     abstract protected static function musicalPermission(): string;
+
+    abstract protected static function musicalHasClassFilter(): bool;
+
+    public function hasMusicalClassFilter(): bool
+    {
+        return static::musicalHasClassFilter();
+    }
+
+    public function musicalClassOptions(): array
+    {
+        $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
+        $subjectId = Subject::query()->where('name', static::musicalSubjectName())->value('id');
+
+        if (! $schoolYearId || ! $subjectId) {
+            return [];
+        }
+
+        return Classes::query()
+            ->whereHas('schedules', fn ($query) => $query
+                ->where('id_subject', $subjectId)
+                ->where('id_schoolyear', $schoolYearId)
+                ->whereIn('status', ['Aprovado', 'Aprovado DP'])
+                ->whereNotNull('shift')
+                ->where('shift', '!=', ''))
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
 
     public static function canAccess(): bool
     {
@@ -50,6 +81,7 @@ trait HasMusicalCoordination
             ->whereIn('status', ['Aprovado', 'Aprovado DP'])
             ->whereNotNull('shift')
             ->where('shift', '!=', '')
+            ->when($this->classFilterId, fn ($query) => $query->whereHas('classes', fn ($classQuery) => $classQuery->whereKey($this->classFilterId)))
             ->with(['teacher', 'subject', 'classes', 'weekday', 'timeperiod', 'room'])
             ->orderBy('shift')
             ->orderBy('id')
