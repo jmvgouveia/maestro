@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\AccessAudit;
 use App\Filament\Pages\StudentsWithoutSchedule;
+use App\Filament\Pages\TeacherSubjectShiftAudit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -21,11 +22,13 @@ class AccessAuditTest extends TestCase
 
         $this->assertFalse(AccessAudit::canAccess());
         $this->assertFalse(StudentsWithoutSchedule::canAccess());
+        $this->assertFalse(TeacherSubjectShiftAudit::canAccess());
 
         $user->assignRole(Role::findByName('Auditoria'));
 
         $this->assertTrue(AccessAudit::canAccess());
         $this->assertTrue(StudentsWithoutSchedule::canAccess());
+        $this->assertTrue(TeacherSubjectShiftAudit::canAccess());
     }
 
     public function test_audit_can_filter_users_who_never_logged_in(): void

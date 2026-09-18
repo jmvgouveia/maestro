@@ -14,6 +14,7 @@ return new class extends Migration
         $permissions = [
             'view access audit',
             'view students without schedule audit',
+            'view teacher subject shift audit',
         ];
 
         foreach ($permissions as $permissionName) {
@@ -39,6 +40,7 @@ return new class extends Migration
         Permission::whereIn('name', [
             'view access audit',
             'view students without schedule audit',
+            'view teacher subject shift audit',
         ])->where('guard_name', 'web')->delete();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

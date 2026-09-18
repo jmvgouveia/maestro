@@ -134,6 +134,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'Auditoria' => [
                 'view access audit',
                 'view students without schedule audit',
+                'view teacher subject shift audit',
             ],
             'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
