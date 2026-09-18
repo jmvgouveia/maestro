@@ -171,27 +171,47 @@ class RegistrationSubjectResource extends Resource
                     /** @var Schedule $first */
                     $first = $group->first();
 
-                    $slotLines = [];
                     $scheduleIds = $group->pluck('id');
                     $limit = (int) $group->min('shift_limit');
                     $enrolled = self::countEnrolledForShift($record, $scheduleIds, (string) $first->shift);
                     $available = max(0, $limit - $enrolled);
                     $selectedScheduleId = $available > 0 ? $first->id : null;
 
-                    foreach ($group as $s) {
-                        $day = $s->weekday?->weekday ?? '';
-                        $start = $s->timeperiod?->start_time ? \Carbon\Carbon::createFromFormat('H:i:s', $s->timeperiod->start_time)->format('H:i') : '';
-                        $end = $s->timeperiod?->end_time ? \Carbon\Carbon::createFromFormat('H:i:s', $s->timeperiod->end_time)->format('H:i') : '';
-                        $room = $s->room?->name ?? '';
+                    $slotRows = $group
+                        ->map(fn ($s): array => [
+                            'day' => $s->weekday?->weekday ?? '',
+                            'start' => $s->timeperiod?->start_time ?? '',
+                            'end' => $s->timeperiod?->end_time ?? '',
+                            'room' => $s->room?->name ?? '',
+                        ])
+                        ->sortBy('start')
+                        ->values();
 
-                        $slotLines[] = trim(sprintf(
-                            '%s às %s–%s%s',
-                            $day ?: '-',
-                            $start,
-                            $end,
-                            $room ? ', Sala: '.$room : '',
-                        ));
+                    $mergedSlots = [];
+                    foreach ($slotRows as $slot) {
+                        $lastKey = array_key_last($mergedSlots);
+
+                        if (
+                            $lastKey !== null
+                            && $mergedSlots[$lastKey]['day'] === $slot['day']
+                            && $mergedSlots[$lastKey]['room'] === $slot['room']
+                            && $mergedSlots[$lastKey]['end'] === $slot['start']
+                        ) {
+                            $mergedSlots[$lastKey]['end'] = $slot['end'];
+                        } else {
+                            $mergedSlots[] = $slot;
+                        }
                     }
+
+                    $slotLines = collect($mergedSlots)
+                        ->map(fn (array $slot): string => trim(sprintf(
+                            '%s · %s–%s%s',
+                            $slot['day'] ?: '-',
+                            substr($slot['start'], 0, 5),
+                            substr($slot['end'], 0, 5),
+                            $slot['room'] ? ', '.$slot['room'] : '',
+                        )))
+                        ->all();
 
                     $temVagaNoTurno = $selectedScheduleId !== null;
 
@@ -201,10 +221,10 @@ class RegistrationSubjectResource extends Resource
                     $availability = $temVagaNoTurno ? "{$available} de {$limit}" : 'Vagas preenchidas';
 
                     if ($temVagaNoTurno) {
-                        $selectionOptions[$selectedScheduleId] = $first->shift ?: 'Turno';
+                        $selectionOptions[$selectedScheduleId] = $first->teacher?->name ?: 'Professor a designar';
                         $selectionDescriptions[$selectedScheduleId] = new HtmlString(sprintf(
-                            '<span class="turno-option-meta"><b>Prof.</b> %s <span>·</span> <b>%s</b></span><span class="turno-option-slots">%s</span>',
-                            e($first->teacher?->name ?: 'Professor a designar'),
+                            '<span class="turno-option-meta"><b>%s</b> <span>·</span> <b>%s</b></span><span class="turno-option-slots">%s</span>',
+                            e($first->shift ?: 'Turno'),
                             e($availability),
                             $slotSummary,
                         ));
@@ -212,14 +232,14 @@ class RegistrationSubjectResource extends Resource
                         return;
                     }
 
-                    $unavailableCards[] = Section::make($first->shift ?: 'Turno')
+                    $unavailableCards[] = Section::make($first->teacher?->name ?: 'Professor a designar')
                         ->icon('heroicon-o-user')
                         ->compact()
                         ->extraAttributes(['class' => 'schedule-shift-card schedule-shift-card-unavailable mb-3'])
                         ->schema([
                             Placeholder::make("resumo_turno_{$first->id}")
-                                ->label('Professor')
-                                ->content($first->teacher?->name ?: 'Professor a designar'),
+                                ->label('Turno')
+                                ->content($first->shift ?: 'Turno'),
                             Placeholder::make("horarios_{$first->id}")
                                 ->label('Horários')
                                 ->content(new HtmlString($slotSummary)),
