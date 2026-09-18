@@ -37,6 +37,14 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label for="students-without-schedule-status" class="mb-1 block text-sm font-medium">Inscrição</label>
+                <select id="students-without-schedule-status" wire:model.live="onlyWithoutSchedule"
+                    class="fi-input block w-full rounded-lg border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800 md:w-52">
+                    <option value="1">Apenas sem turno</option>
+                    <option value="0">Todos</option>
+                </select>
+            </div>
         </div>
 
         <x-filament::button wire:click="exportRows" icon="heroicon-o-arrow-down-tray">
@@ -57,6 +65,7 @@
                     <th class="px-4 py-3 text-left">Turma</th>
                     <th class="px-4 py-3 text-left">Núcleo</th>
                     <th class="px-4 py-3 text-left">Disciplina</th>
+                    <th class="px-4 py-3 text-left">Turno</th>
                     <th class="px-4 py-3 text-left">E-mail</th>
                 </tr>
             </thead>
@@ -68,11 +77,12 @@
                         <td class="px-4 py-3">{{ $row->registration?->class?->name ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $row->registration?->class?->buildings?->pluck('name')->implode(', ') ?: '—' }}</td>
                         <td class="px-4 py-3">{{ $row->subject?->name ?? '—' }}</td>
+                        <td class="px-4 py-3">{{ $row->selectedSchedule?->shift ?? 'Sem turno' }}</td>
                         <td class="px-4 py-3">{{ $row->registration?->student?->email ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">Não existem alunos nesta situação.</td>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">Não existem alunos nesta situação.</td>
                     </tr>
                 @endforelse
             </tbody>

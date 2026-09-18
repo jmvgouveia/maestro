@@ -36,6 +36,8 @@ class StudentsWithoutSchedule extends Page
 
     public ?int $classFilterId = null;
 
+    public bool $onlyWithoutSchedule = true;
+
     public static function canAccess(): bool
     {
         return auth()->user()?->can('view students without schedule audit') ?? false;
@@ -57,6 +59,11 @@ class StudentsWithoutSchedule extends Page
     }
 
     public function updatedClassFilterId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedOnlyWithoutSchedule(): void
     {
         $this->resetPage();
     }
@@ -101,7 +108,7 @@ class StudentsWithoutSchedule extends Page
         return response()->streamDownload(function () use ($rows): void {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Número', 'Aluno', 'Turma', 'Núcleo', 'Disciplina', 'E-mail do aluno'], ';');
+            fputcsv($handle, ['Número', 'Aluno', 'Turma', 'Núcleo', 'Disciplina', 'Turno', 'E-mail do aluno'], ';');
 
             foreach ($rows as $row) {
                 fputcsv($handle, [
@@ -110,6 +117,7 @@ class StudentsWithoutSchedule extends Page
                     $row->registration?->class?->name,
                     $row->registration?->class?->buildings?->pluck('name')->implode(', ') ?: '—',
                     $row->subject?->name,
+                    $row->selectedSchedule?->shift ?? 'Sem turno',
                     $row->registration?->student?->email ?? '—',
                 ], ';');
             }
@@ -125,13 +133,13 @@ class StudentsWithoutSchedule extends Page
         $schoolYearId = SchoolYear::query()->where('active', true)->value('id');
 
         return RegistrationSubject::query()
-            ->whereNull('id_schedule')
             ->whereHas('subject', fn ($query) => $query
                 ->where('student_can_enroll', true)
                 ->where('status', true)
                 ->when($this->subjectFilterId, fn ($subjectQuery) => $subjectQuery->whereKey($this->subjectFilterId)))
             ->whereHas('registration', fn ($query) => $query->where('id_schoolyear', $schoolYearId))
-            ->with(['subject', 'registration.student', 'registration.class.buildings'])
+            ->when($this->onlyWithoutSchedule, fn ($query) => $query->whereNull('id_schedule'))
+            ->with(['subject', 'registration.student', 'registration.class.buildings', 'selectedSchedule'])
             ->when($this->buildingFilterId, fn ($query) => $query->whereHas('registration.class.buildings', fn ($buildingQuery) => $buildingQuery->whereKey($this->buildingFilterId)))
             ->when($this->classFilterId, fn ($query) => $query->whereHas('registration', fn ($registrationQuery) => $registrationQuery->where('id_class', $this->classFilterId)))
             ->when($this->search !== '', fn ($query) => $query->where(function ($query): void {
