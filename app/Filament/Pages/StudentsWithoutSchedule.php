@@ -116,7 +116,7 @@ class StudentsWithoutSchedule extends Page
         return response()->streamDownload(function () use ($rows): void {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Número', 'Aluno', 'Turma', 'Núcleo', 'Disciplina', 'Turno', 'E-mail do aluno'], ';');
+            fputcsv($handle, ['Número', 'Aluno', 'Turma', 'Núcleo', 'Disciplina', 'Turno', 'Professor', 'E-mail do aluno'], ';');
 
             foreach ($rows as $row) {
                 fputcsv($handle, [
@@ -126,6 +126,7 @@ class StudentsWithoutSchedule extends Page
                     $row->registration?->class?->buildings?->pluck('name')->implode(', ') ?: '—',
                     $row->subject?->name,
                     $row->selectedSchedule?->shift ?? 'Sem turno',
+                    $row->selectedSchedule?->teacher?->name ?? '—',
                     $row->registration?->student?->email ?? '—',
                 ], ';');
             }
@@ -150,7 +151,7 @@ class StudentsWithoutSchedule extends Page
             ->whereHas('registration', fn ($query) => $query->where('id_schoolyear', $schoolYearId))
             ->when($this->scheduleFilter === 'without_schedule', fn ($query) => $query->whereNull('registrations_subjects.id_schedule'))
             ->when($this->scheduleFilter === 'with_schedule', fn ($query) => $query->whereNotNull('registrations_subjects.id_schedule'))
-            ->with(['subject', 'registration.student', 'registration.class.buildings', 'selectedSchedule'])
+            ->with(['subject', 'registration.student', 'registration.class.buildings', 'selectedSchedule.teacher'])
             ->when($this->buildingFilterId, fn ($query) => $query->whereHas('registration.class.buildings', fn ($buildingQuery) => $buildingQuery->whereKey($this->buildingFilterId)))
             ->when($this->classFilterId, fn ($query) => $query->whereHas('registration', fn ($registrationQuery) => $registrationQuery->where('id_class', $this->classFilterId)))
             ->when($this->search !== '', fn ($query) => $query->where(function ($query): void {

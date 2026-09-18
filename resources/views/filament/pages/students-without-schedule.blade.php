@@ -68,6 +68,7 @@
                     <th class="px-4 py-3 text-left">Disciplina</th>
                     <th class="px-4 py-3 text-left"><button type="button" wire:click="sortByShift">Turno
                             {{ $sortDirection === 'asc' ? '↑' : '↓' }}</button></th>
+                    <th class="px-4 py-3 text-left">Professor</th>
                     <th class="px-4 py-3 text-left">E-mail</th>
                 </tr>
             </thead>
@@ -80,11 +81,12 @@
                         <td class="px-4 py-3">{{ $row->registration?->class?->buildings?->pluck('name')->implode(', ') ?: '—' }}</td>
                         <td class="px-4 py-3">{{ $row->subject?->name ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $row->selectedSchedule?->shift ?? 'Sem turno' }}</td>
+                        <td class="px-4 py-3">{{ $row->selectedSchedule?->teacher?->name ?? '—' }}</td>
                         <td class="px-4 py-3">{{ $row->registration?->student?->email ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">Não existem alunos nesta situação.</td>
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">Não existem alunos nesta situação.</td>
                     </tr>
                 @endforelse
             </tbody>
