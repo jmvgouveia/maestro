@@ -169,7 +169,7 @@ class RegistrationSubjectResource extends Resource
                     /** @var Schedule $first */
                     $first = $group->first();
 
-                    $slotLines = [];      // linhas com dia/hora/sala (sem nº de vagas)
+                    $slotLines = [];
                     $scheduleIds = $group->pluck('id');
                     $limit = (int) $group->min('shift_limit');
                     $enrolled = self::countEnrolledForShift($record, $scheduleIds, (string) $first->shift);
@@ -182,19 +182,13 @@ class RegistrationSubjectResource extends Resource
                         $end = $s->timeperiod?->end_time ? \Carbon\Carbon::createFromFormat('H:i:s', $s->timeperiod->end_time)->format('H:i') : '';
                         $room = $s->room?->name ?? '';
 
-                        // linha visual (sem nº de vagas)
-                        $linha = trim(sprintf(
+                        $slotLines[] = trim(sprintf(
                             '%s às %s–%s%s',
                             $day ?: '-',
                             $start,
                             $end,
                             $room ? ', Sala: '.$room : '',
                         ));
-
-                        $slotLines[] = Placeholder::make("slot_{$s->id}")
-                            ->label(' ')
-                            ->content($linha)
-                            ->extraAttributes(['class' => 'schedule-slot']);
                     }
 
                     $temVagaNoTurno = $selectedScheduleId !== null;
@@ -209,6 +203,11 @@ class RegistrationSubjectResource extends Resource
                         ));
                     }
 
+                    $slotSummary = collect($slotLines)
+                        ->map(fn (string $line): string => e($line))
+                        ->implode(' <span class="text-gray-400">·</span> ');
+                    $availability = $temVagaNoTurno ? "{$available} de {$limit}" : 'Vagas preenchidas';
+
                     return Section::make("Professor: {$first->teacher?->name}")
                         ->icon('heroicon-o-user')
                         ->compact()
@@ -219,38 +218,23 @@ class RegistrationSubjectResource extends Resource
                             Placeholder::make("resumo_turno_{$first->id}")
                                 ->label(false)
                                 ->content(new HtmlString(sprintf(
-                                    '<div class="schedule-shift-summary-inner"><span><b>TURNO</b><strong>%s</strong></span><span><b>VAGAS DISPONÍVEIS</b><strong>%d de %d</strong></span></div>',
-                                    e($first->shift ?: '—'),
-                                    $available,
-                                    $limit,
-                                )))
+                                     '<div class="schedule-shift-summary-inner"><span><b>TURNO</b><strong>%s</strong></span><span><b>VAGAS</b><strong>%s</strong></span></div>',
+                                     e($first->shift ?: '—'),
+                                     e($availability),
+                                 )))
                                 ->extraAttributes(['class' => 'schedule-shift-summary'])
                                 ->columnSpanFull(),
 
-                            // Vagas do turno completo, não de cada linha de horário.
-                            // Lista de horários (sem nº de vagas por linha)
-                            Fieldset::make('Horários:')
-                                ->schema($slotLines)
-                                ->columns(1)
+                            Placeholder::make("horarios_{$first->id}")
+                                ->label('Horários')
+                                ->content(new HtmlString('<span class="text-sm text-gray-600 dark:text-gray-300">'.$slotSummary.'</span>'))
                                 ->columnSpanFull()
-                                ->extraAttributes(['class' => 'schedule-slots']),
-
-                            // Sem vagas no turno
-                            ToggleButtons::make("sem_vagas_{$first->id}")
-                                ->label('Escolher')
-                                ->options(['sem' => 'Sem vagas'])
-                                ->colors(['sem' => 'danger'])
-                                ->icons(['sem' => 'heroicon-m-no-symbol'])
-                                ->inline()
-                                ->disabled()
-                                ->dehydrated(false)
-                                ->visible(fn () => ! $temVagaNoTurno)
-                                ->columnSpanFull(),
+                                ->extraAttributes(['class' => $temVagaNoTurno ? 'schedule-slots' : 'schedule-slots opacity-60']),
                         ])
                         ->columns(1);
                 })->values()->toArray();
 
-                $selectionOptions['none'] = 'Nenhum turno';
+                $selectionOptions['none'] = 'Não selecionar turno';
 
                 $selection = Section::make('Escolher turno')
                     ->icon('heroicon-o-check-circle')
@@ -751,7 +735,8 @@ class RegistrationSubjectResource extends Resource
             ->actions([
                 // 1) Selecionar Turno — visível quando pode inscrever e janela aberta
                 Tables\Actions\EditAction::make('selectTurno')
-                    ->label('Selecionar Turno')
+                    ->label('Escolher turno')
+                    ->modalHeading('Escolher turno')
                     ->modalWidth('2xl')
                     ->extraModalWindowAttributes(['class' => 'maestro-schedule-modal'])
                     ->using(function (RegistrationSubject $record, array $data): void {
