@@ -39,10 +39,10 @@
             </div>
             <div>
                 <label for="students-without-schedule-status" class="mb-1 block text-sm font-medium">Inscrição</label>
-                <select id="students-without-schedule-status" wire:model.live="onlyWithoutSchedule"
+                <select id="students-without-schedule-status" wire:model.live="scheduleFilter"
                     class="fi-input block w-full rounded-lg border-gray-300 text-sm dark:border-gray-600 dark:bg-gray-800 md:w-52">
-                    <option value="1">Apenas sem turno</option>
-                    <option value="0">Todos</option>
+                    <option value="all">Todos</option>
+                    <option value="without_schedule">Apenas sem turno</option>
                 </select>
             </div>
         </div>
