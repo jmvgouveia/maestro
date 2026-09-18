@@ -6,28 +6,28 @@ use App\Listeners\RevokeSessionsAfterPasswordReset;
 use App\Models\CourseSubject;
 use App\Models\EmailAudit;
 use App\Models\Registration;
-use App\Models\TeacherSubject;
-use App\Models\User;
-use App\Policies\EmailAuditPolicy;
-use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Event;
-use Lab404\Impersonate\Services\ImpersonateManager;
-use App\Policies\RolePolicy;
-use App\Policies\PermissionPolicy;
-use Filament\Support\Colors\Color;
-use Filament\Support\Facades\FilamentColor;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use App\Observers\StudentObserver;
+use App\Models\SchoolYear;
 use App\Models\Student;
 use App\Models\Teacher;
-use App\Observers\TeacherObserver;
-use Filament\Notifications\Auth\ResetPassword as FilamentResetPassword;
+use App\Models\TeacherSubject;
+use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
-
-
+use App\Observers\StudentObserver;
+use App\Observers\TeacherObserver;
+use App\Policies\EmailAuditPolicy;
+use App\Policies\PermissionPolicy;
+use App\Policies\RolePolicy;
+use Filament\Notifications\Auth\ResetPassword as FilamentResetPassword;
+use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentColor;
+use Illuminate\Auth\Events\Login as LoginEvent;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+use Lab404\Impersonate\Services\ImpersonateManager;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -71,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
             if (
                 $isSchoolYearRecord
                 && in_array($ability, ['update', 'delete', 'forceDelete', 'restore', 'replicate'], true)
-                && (int) $record->id_schoolyear !== (int) \App\Models\SchoolYear::query()->where('active', true)->value('id')
+                && (int) $record->id_schoolyear !== (int) SchoolYear::query()->where('active', true)->value('id')
             ) {
                 return false;
             }
@@ -106,6 +106,11 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(PasswordReset::class, RevokeSessionsAfterPasswordReset::class);
+        Event::listen(LoginEvent::class, function (LoginEvent $event): void {
+            if ($event->user instanceof User) {
+                $event->user->forceFill(['last_login_at' => now()])->saveQuietly();
+            }
+        });
 
         Student::observe(StudentObserver::class);
         //  Teacher::observe(TeacherObserver::class);

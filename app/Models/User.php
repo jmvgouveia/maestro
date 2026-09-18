@@ -60,6 +60,7 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
             'email_verified_at' => 'datetime',
             'mfa_grace_renewed_at' => 'datetime',
             'mfa_grace_until' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
             'activation_token_expires_at' => 'datetime',

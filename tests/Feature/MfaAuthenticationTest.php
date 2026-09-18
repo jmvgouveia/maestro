@@ -56,6 +56,7 @@ class MfaAuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame($user->getKey(), session(EnforceMfa::SESSION_KEY));
+        $this->assertNotNull($user->fresh()->last_login_at);
     }
 
     public function test_guardian_only_user_can_login_without_an_mfa_code(): void
