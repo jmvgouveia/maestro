@@ -125,6 +125,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'Horário/Sala' => [
                 'view room merged schedule',
             ],
+            'Coordenador de Formação Musical' => [
+                'view formacao musical coordination',
+            ],
+            'Coordenador de Iniciação Musical' => [
+                'view iniciacao musical coordination',
+            ],
             'Recursos Humanos' => $recursosHumanosPermissions,
             'Aluno' => [],
             'Encarregado de Educação' => [],

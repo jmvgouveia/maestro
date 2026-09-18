@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Althinect\FilamentSpatieRolesPermissions\Concerns\HasSuperAdmin;
 use App\Http\Middleware\EnforceMfa;
+use Database\Factories\UserFactory;
 use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -21,7 +22,7 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
 {
     public const ROLE_GUARDIAN = 'Encarregado de Educação';
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, HasSuperAdmin, Notifiable, TwoFactorAuthentication;
 
     /**
@@ -171,6 +172,8 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Aluno',
                 self::ROLE_GUARDIAN,
                 'Horário/Sala',
+                'Coordenador de Formação Musical',
+                'Coordenador de Iniciação Musical',
             ]);
     }
 
