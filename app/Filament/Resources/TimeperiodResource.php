@@ -65,6 +65,9 @@ class TimeperiodResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                    ->label("ID")
+                    ->sortable(),
                 TextColumn::make('description')
                     ->label("Descrição")
                     ->searchable(),
