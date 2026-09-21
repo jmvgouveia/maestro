@@ -49,7 +49,11 @@ class WeekdayResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+
             ->columns([
+                TextColumn::make('id')
+                    ->label("ID")
+                    ->sortable(),
                 TextColumn::make('weekday')
                     ->label('Dia da semana'),
             ])
