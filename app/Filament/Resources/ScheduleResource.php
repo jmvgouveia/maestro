@@ -119,7 +119,7 @@ class ScheduleResource extends Resource
                     foreach ($schedule->classes as $class) {
                         $linha = [
                             $schedule->id_weekday + 2,
-                            $schedule->id_timeperiod - 36,
+                            $schedule->id_timeperiod,
                             "\"{$class->name}\"",
                             $class->year,
                             "\"{$schedule->teacher->number}\"",
@@ -138,7 +138,7 @@ class ScheduleResource extends Resource
                 foreach ($turmaAlunos as $turma => $info) {
                     $linha = [
                         $schedule->id_weekday + 2,
-                        $schedule->id_timeperiod - 36,
+                        $schedule->id_timeperiod ,
                         "\"$turma\"",
                         $info['ano'],
                         "\"{$schedule->teacher->number}\"",
