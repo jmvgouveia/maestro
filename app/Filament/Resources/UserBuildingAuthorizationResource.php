@@ -33,6 +33,14 @@ class UserBuildingAuthorizationResource extends Resource
         return 'Autorizações de Edifícios';
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->isKeyManager()
+            && ($user?->can('manage user room authorizations') ?? false);
+    }
+
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()->with(['user', 'building', 'createdBy']);

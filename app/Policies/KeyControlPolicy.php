@@ -9,12 +9,14 @@ class KeyControlPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->checkPermissionTo('view-any key control');
+        return ($user->isPorter() || $user->isKeyManager())
+            && $user->checkPermissionTo('view-any key control');
     }
 
     public function view(User $user, KeyControl $keyControl): bool
     {
-        return $user->checkPermissionTo('view key control');
+        return ($user->isPorter() || $user->isKeyManager())
+            && $user->checkPermissionTo('view key control');
     }
 
     public function create(User $user): bool
@@ -80,7 +82,7 @@ class KeyControlPolicy
 
     public function operate(User $user): bool
     {
-        return $user->checkPermissionTo('operate key control');
+        return $user->isPorter() && $user->checkPermissionTo('operate key control');
     }
 
     public function correct(User $user, KeyControl $keyControl): bool

@@ -39,6 +39,7 @@ class UserBuildingAuthorizationPolicy
 
     private function canManage(User $user): bool
     {
-        return $user->checkPermissionTo('manage user room authorizations');
+        return $user->isKeyManager()
+            && $user->checkPermissionTo('manage user room authorizations');
     }
 }

@@ -49,6 +49,14 @@ class KeyControlResource extends Resource
         return 'Registos de Chaves';
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+
+        return ($user?->isPorter() || $user?->isKeyManager())
+            && ($user?->can('view-any key control') ?? false);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -273,7 +281,8 @@ class KeyControlResource extends Resource
                      BulkAction::make('exportSelected')
                          ->label('Exportar selecionados')
                          ->icon('heroicon-o-arrow-down-tray')
-                         ->visible(fn (): bool => auth()->user()?->can('export key control') ?? false)
+                         ->visible(fn (): bool => auth()->user()?->isKeyManager()
+                             && (auth()->user()?->can('export key control') ?? false))
                          ->action(fn (Collection $records): StreamedResponse => static::exportCsv(
                             static::getEloquentQuery()->whereKey($records->modelKeys()),
                         )),
@@ -284,7 +293,8 @@ class KeyControlResource extends Resource
                     ->label('Exportar filtrados')
                     ->icon('heroicon-o-arrow-down-tray')
                     ->action(fn (HasTable $livewire): StreamedResponse => static::exportCsv($livewire->getTableQueryForExport()))
-                         ->visible(fn (): bool => auth()->user()?->can('export key control') ?? false),
+                     ->visible(fn (): bool => auth()->user()?->isKeyManager()
+                         && (auth()->user()?->can('export key control') ?? false)),
             ]);
     }
 
