@@ -375,14 +375,18 @@ class KeyControlResource extends Resource
                 throw new \RuntimeException('Esta sala já tem uma chave levantada.');
             }
 
-            if ($record->isActive() && KeyControl::query()
+            $holderActiveKey = KeyControl::query()
                 ->where('holder_type', $holderType)
                 ->where('holder_id', $holderId)
                 ->whereNull('returned_at')
                 ->where('is_corrected', false)
                 ->where($record->getKeyName(), '<>', $record->getKey())
-                ->exists()) {
-                throw new \RuntimeException('O utilizador '.$holderName.' já tem a chave da sala '.$room->name.' em sua posse. Não é possível ter duas chaves.');
+                ->with('room')
+                ->lockForUpdate()
+                ->first();
+
+            if ($record->isActive() && $holderActiveKey !== null) {
+                throw new \RuntimeException($holderName.' já tem a chave da sala '.$holderActiveKey->room?->name.' em sua posse. Não é possível ter duas chaves.');
             }
 
             $correction = $record->replicate();

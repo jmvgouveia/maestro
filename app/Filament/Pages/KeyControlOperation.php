@@ -384,15 +384,17 @@ class KeyControlOperation extends Page implements HasForms
                     throw new \RuntimeException('Esta sala já tem uma chave levantada.');
                 }
 
-                $holderHasActiveKey = KeyControl::query()
+                $holderActiveKey = KeyControl::query()
                     ->where('holder_type', $holderType)
                     ->where('holder_id', $holderId)
                     ->whereNull('returned_at')
                     ->where('is_corrected', false)
-                    ->exists();
+                    ->with('room')
+                    ->lockForUpdate()
+                    ->first();
 
-                if ($holderHasActiveKey) {
-                    throw new \RuntimeException('O utilizador '.$holder->name.' já tem a chave da sala '.$room->name.' em sua posse. Não é possível ter duas chaves.');
+                if ($holderActiveKey !== null) {
+                    throw new \RuntimeException($holder->name.' já tem a chave da sala '.$holderActiveKey->room?->name.' em sua posse. Não é possível ter duas chaves.');
                 }
 
                 KeyControl::create([
