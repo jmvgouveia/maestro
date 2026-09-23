@@ -6,7 +6,13 @@
                 <h2>Salas e chaves</h2>
                 <p>Consulte rapidamente o estado das salas autorizadas e registe cada movimento.</p>
             </div>
-            <div class="porter-hero-mark" aria-hidden="true"><x-heroicon-o-key class="h-8 w-8" /></div>
+            <div class="porter-hero-tools">
+                <div class="porter-clock" x-data="{ now: new Date() }" x-init="setInterval(() => now = new Date(), 1000)" aria-live="polite">
+                    <time class="porter-clock-time" x-text="now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })"></time>
+                    <time class="porter-clock-date" x-text="now.toLocaleDateString('pt-PT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })"></time>
+                </div>
+                <div class="porter-hero-mark" aria-hidden="true"><x-heroicon-o-key class="h-8 w-8" /></div>
+            </div>
         </div>
 
         <div class="porter-stat-grid">
@@ -62,19 +68,34 @@
                         </div>
                         <div class="porter-room-details">
                             @if ($active)
-                                <p><span>Entregue a</span>{{ $active->holderDisplayLabel() }} ({{ $active->holderTypeLabel() === 'Aluno' ? 'A' : 'P' }})</p>
-                                <p><span>Desde</span>{{ $active->picked_up_at->format('d/m/Y H:i') }}</p>
+                                <div class="porter-active-info">
+                                    <span class="porter-holder-avatar {{ $active->holderTypeLabel() === 'Aluno' ? 'is-student' : 'is-teacher' }}">
+                                        @if ($active->holderTypeLabel() === 'Aluno')
+                                            <x-heroicon-o-academic-cap class="h-6 w-6" aria-hidden="true" />
+                                        @else
+                                            <x-heroicon-o-user class="h-6 w-6" aria-hidden="true" />
+                                        @endif
+                                    </span>
+                                    <div class="porter-active-copy">
+                                        <div class="porter-holder-meta">
+                                            <span class="porter-holder-badge {{ $active->holderTypeLabel() === 'Aluno' ? 'is-student' : 'is-teacher' }}">{{ mb_strtoupper($active->holderTypeLabel()) }}</span>
+                                            <span class="porter-holder-number">{{ $active->holder?->number ?: 'Sem número' }}</span>
+                                        </div>
+                                        <strong class="porter-holder-name">{{ $active->holder?->name ?? 'Desconhecido' }}</strong>
+                                        <p class="porter-date-value"><x-heroicon-o-calendar-days class="h-5 w-5" aria-hidden="true" /><span>{{ $active->picked_up_at->format('d/m/Y H:i') }}</span></p>
+                                    </div>
+                                </div>
                                 @if ($active->pick_up_observations)<p class="porter-note">{{ $active->pick_up_observations }}</p>@endif
                             @else
-                                <p class="porter-available-copy"><x-heroicon-o-check-circle class="h-4 w-4" /> Chave disponível para levantamento</p>
+                                <div class="porter-available-copy"><span class="porter-key-avatar"><x-heroicon-o-key class="h-7 w-7" /></span><strong>Chave disponível</strong></div>
                             @endif
                         </div>
                         <div class="porter-room-actions">
                             @if ($active)
-                                <x-filament::button color="danger" size="lg" wire:click="selectReturn({{ $room->id }})" class="w-full">Devolver</x-filament::button>
-                                <x-filament::button color="danger" outlined size="sm" wire:click="selectCorrect({{ $room->id }})" class="w-full">Corrigir registo</x-filament::button>
+                                <x-filament::button color="danger" icon="heroicon-o-arrow-uturn-left" size="sm" wire:click="selectReturn({{ $room->id }})" class="w-full">Devolver</x-filament::button>
+                                <x-filament::button color="danger" icon="heroicon-o-pencil-square" outlined size="sm" wire:click="selectCorrect({{ $room->id }})" class="w-full">Corrigir registo</x-filament::button>
                             @else
-                                <x-filament::button color="primary" size="lg" wire:click="selectPickUp({{ $room->id }})" class="w-full">Levantar</x-filament::button>
+                                <x-filament::button color="primary" icon="heroicon-o-key" size="sm" wire:click="selectPickUp({{ $room->id }})" class="w-full">Levantar</x-filament::button>
                             @endif
                         </div>
                     </article>
@@ -91,6 +112,10 @@
         .porter-hero h2 { font-size: 1.65rem; font-weight: 750; letter-spacing: -.025em; }
         .porter-hero p:last-child { margin-top: .35rem; color: #dbeafe; font-size: .9rem; }
         .porter-hero-mark { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; color: #082f66; background: #ffbf00; border-radius: 1rem; }
+        .porter-hero-tools { display: flex; align-items: center; gap: 1.25rem; }
+        .porter-clock { min-width: 10rem; text-align: right; }
+        .porter-clock-time { display: block; color: white; font-size: 1.7rem; font-weight: 750; line-height: 1; letter-spacing: -.02em; }
+        .porter-clock-date { display: block; margin-top: .4rem; color: #bfdbfe; font-size: .72rem; text-transform: capitalize; }
         .porter-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
         .porter-stat-card { position: relative; display: block; width: 100%; min-height: 7.5rem; padding: 1.15rem 1.25rem; color: inherit; text-align: left; background: white; border: 1px solid #e5e7eb; border-radius: .85rem; box-shadow: 0 2px 5px rgb(15 23 42 / 4%); cursor: pointer; transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease; }
         .porter-stat-card:hover, .porter-stat-card:focus-visible { border-color: #94a3b8; box-shadow: 0 5px 14px rgb(15 23 42 / 9%); outline: none; }
@@ -111,7 +136,7 @@
         .porter-filters { display: grid; grid-template-columns: minmax(14rem, 1.6fr) repeat(2, minmax(10rem, 1fr)); align-items: center; gap: .65rem; width: 100%; }
         .porter-filter-select { display: flex; align-items: center; gap: .55rem; min-width: 0; min-height: 4.5rem; padding: .65rem .8rem; color: #64748b; background: white; border: 1px solid #dbe4f0; border-radius: .65rem; box-shadow: 0 1px 2px rgb(15 23 42 / 3%); }
         .porter-filter-select select { width: 100%; color: #172033; background: transparent; border: 0; outline: 0; font-size: .85rem; }
-        .porter-room-card { display: flex; min-height: 16rem; flex-direction: column; padding: 1.15rem; background: white; border: 1px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: .85rem; box-shadow: 0 2px 5px rgb(15 23 42 / 4%); transition: box-shadow 150ms ease, transform 150ms ease; }
+        .porter-room-card { display: flex; min-height: 14rem; flex-direction: column; padding: 1.15rem; background: white; border: 1px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: .85rem; box-shadow: 0 2px 5px rgb(15 23 42 / 4%); transition: box-shadow 150ms ease, transform 150ms ease; }
         .porter-room-card:hover { box-shadow: 0 10px 22px rgb(15 23 42 / 8%); transform: translateY(-1px); }
         .porter-room-card.is-occupied { background: #fffafa; border-top-color: #dc2626; }
         .porter-room-heading { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
@@ -121,12 +146,27 @@
         .porter-status > span { width: .4rem; height: .4rem; border-radius: 999px; background: currentColor; }
         .status-available { color: #15803d; background: #dcfce7; }
         .status-occupied { color: #b91c1c; background: #fee2e2; }
-        .porter-room-details { min-height: 5rem; margin: 1.15rem 0; color: #475569; font-size: .8rem; }
+        .porter-room-details { min-height: 4rem; margin: 1.35rem 0 .85rem; color: #475569; font-size: .8rem; }
         .porter-room-details p + p { margin-top: .45rem; }
-        .porter-room-details p span { display: block; margin-bottom: .1rem; color: #94a3b8; font-size: .68rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+        .porter-active-info { display: flex; align-items: center; gap: .7rem; }
+        .porter-holder-avatar, .porter-key-avatar { display: grid; place-items: center; flex-shrink: 0; width: 3rem; height: 3rem; border-radius: 999px; }
+        .porter-holder-avatar.is-student { color: #9333ea; background: #f3e8ff; }
+        .porter-holder-avatar.is-teacher { color: #1d4ed8; background: #dbeafe; }
+        .porter-field-label { display: block; margin: 0 0 .35rem; color: #94a3b8; font-size: .68rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+        .porter-active-copy { min-width: 0; flex: 1; }
+        .porter-holder-name { display: block; max-width: 100%; margin-top: .65rem; overflow: hidden; color: #172033; font-size: .95rem; font-weight: 750; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+        .porter-holder-number { color: #64748b; font-size: .8rem; font-weight: 500; }
+        .porter-date-value { display: flex !important; align-items: center; gap: .5rem; margin-top: .35rem !important; color: #475569; font-size: .8rem; font-weight: 500; }
+        .porter-date-value > span { display: flex; flex-direction: column; gap: .15rem; }
+        .porter-date-value strong { color: #94a3b8; font-size: .68rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+        .porter-holder-badge { display: inline-flex; align-items: center; padding: .25rem .55rem; border-radius: 999px; font-size: .65rem; font-weight: 750; letter-spacing: .04em; }
+        .porter-holder-badge.is-student { color: #c2410c; background: #ffedd5; }
+        .porter-holder-badge.is-teacher { color: #1d4ed8; background: #dbeafe; }
         .porter-note { padding: .55rem .7rem; color: #475569; background: #f8fafc; border-radius: .45rem; }
-        .porter-available-copy { display: flex; align-items: center; gap: .4rem; padding-top: 1.25rem; color: #15803d; font-weight: 600; }
-        .porter-room-actions { display: flex; flex-direction: column; gap: .5rem; margin-top: auto; }
+        .porter-available-copy { display: flex; align-items: center; gap: .7rem; padding-top: 1rem; color: #15803d; font-weight: 650; }
+        .porter-key-avatar { color: #15803d; background: #dcfce7; }
+        .porter-room-actions { display: flex; flex-direction: column; gap: .4rem; margin-top: auto; }
+        .porter-room-actions .fi-btn { min-height: 2.1rem; height: 2.1rem; padding-block: .2rem; white-space: nowrap; }
         .porter-empty { padding: 3rem 1rem; color: #64748b; text-align: center; background: white; border: 1px dashed #cbd5e1; border-radius: .85rem; }
         .porter-empty p { margin-top: .6rem; font-size: .9rem; }
         .key-control-form-surface { background: #f8fafc; }
@@ -137,7 +177,7 @@
         @media (max-width: 1280px) { .key-control-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         @media (max-width: 900px) { .key-control-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
         @media (max-width: 900px) { .porter-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 700px) { .porter-hero { align-items: flex-start; padding: 1.2rem; } .porter-hero-mark { display: none; } .porter-stat-grid { gap: .65rem; } .porter-stat-card { min-height: 6.5rem; padding: .9rem; } .porter-stat-card strong { font-size: 1.65rem; } .porter-stat-icon { top: .75rem; right: .75rem; width: 1.9rem; height: 1.9rem; } .porter-toolbar { align-items: stretch; flex-direction: column; } .porter-filters { grid-template-columns: 1fr; width: 100%; } .porter-filter-select, .porter-search { width: 100%; min-height: 3.5rem; } }
+        @media (max-width: 700px) { .porter-hero { align-items: flex-start; padding: 1.2rem; } .porter-hero-tools { gap: .75rem; } .porter-clock { min-width: 0; } .porter-clock-time { font-size: 1.35rem; } .porter-clock-date { max-width: 8rem; font-size: .65rem; } .porter-hero-mark { display: none; } .porter-stat-grid { gap: .65rem; } .porter-stat-card { min-height: 6.5rem; padding: .9rem; } .porter-stat-card strong { font-size: 1.65rem; } .porter-stat-icon { top: .75rem; right: .75rem; width: 1.9rem; height: 1.9rem; } .porter-toolbar { align-items: stretch; flex-direction: column; } .porter-filters { grid-template-columns: 1fr; width: 100%; } .porter-filter-select, .porter-search { width: 100%; min-height: 3.5rem; } }
         @media (max-width: 640px) { .key-control-grid { grid-template-columns: minmax(0, 1fr); } }
     </style>
 

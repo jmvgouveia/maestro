@@ -159,6 +159,7 @@ class KeyControlOperation extends Page implements HasForms
                     ->label('Entregue a')
                     ->required()
                     ->searchable()
+                    ->autofocus()
                     ->options(fn (): array => $this->holderOptions())
                     ->columnSpanFull(),
                 Textarea::make('observations')
