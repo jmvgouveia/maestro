@@ -405,7 +405,7 @@ class KeyControlOperation extends Page implements HasForms
                 ]);
             });
 
-            $this->sendSuccess('Levantamento registado com sucesso.');
+            $this->sendSuccess('Chave da sala '.$room->name.' entregue a '.$holder->name.' com sucesso.');
         } catch (\RuntimeException $e) {
             $this->sendError($e->getMessage());
         }
@@ -451,7 +451,7 @@ class KeyControlOperation extends Page implements HasForms
             return;
         }
 
-        $this->sendSuccess('Devolução registada com sucesso.');
+        $this->sendSuccess($active->holderDisplayName().' entregou a chave da sala '.$room->name.' com sucesso.');
     }
 
     public function correctLatest(int $roomId, array $data): void
