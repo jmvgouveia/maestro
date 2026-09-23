@@ -166,6 +166,27 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
         return $this->belongsTo(self::class, 'mfa_grace_renewed_by');
     }
 
+    public function authorizedBuildings()
+    {
+        return $this->belongsToMany(Building::class, 'user_building_authorizations', 'user_id', 'building_id')
+            ->withTimestamps();
+    }
+
+    public function managedUserBuildingAuthorizations()
+    {
+        return $this->hasMany(UserBuildingAuthorization::class, 'created_by');
+    }
+
+    public function isPorter(): bool
+    {
+        return $this->hasRole('Porteiro');
+    }
+
+    public function isKeyManager(): bool
+    {
+        return $this->hasRole('Gestão de Chaves');
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         return $panel->getId() === 'admin'
@@ -183,6 +204,8 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Coordenador de Iniciação Musical',
                 'Auditoria',
                 'Gestor de Horários',
+                'Porteiro',
+                'Gestão de Chaves',
             ]);
     }
 

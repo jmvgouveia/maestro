@@ -84,6 +84,12 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => view('filament.components.topbar-user-summary')->render(),
             )
             ->renderHook(
+                PanelsRenderHook::BODY_START,
+                fn (): string => auth()->user()?->isPorter()
+                    ? '<script>document.body.classList.add("porter-interface");</script>'
+                    : '',
+            )
+            ->renderHook(
                 PanelsRenderHook::TOPBAR_START,
                 fn (): string => \Livewire\Livewire::mount(GuardianStudentSelector::class),
             )
@@ -141,6 +147,8 @@ class AdminPanelProvider extends PanelProvider
                     ->label('Horários'),
                 NavigationGroup::make()
                     ->label('Recursos'),
+                NavigationGroup::make()
+                    ->label('Porteiro'),
                 NavigationGroup::make()
                     ->label('Administração')
                     ->collapsible(),
