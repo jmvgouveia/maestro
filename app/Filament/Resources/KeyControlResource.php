@@ -363,7 +363,7 @@ class KeyControlResource extends Resource
                 throw new \RuntimeException('A sala correta não está autorizada para si.');
             }
 
-            Room::query()->lockForUpdate()->findOrFail($roomId);
+            $room = Room::query()->lockForUpdate()->findOrFail($roomId);
 
             if ($record->isActive() && KeyControl::query()
                 ->where('room_id', $roomId)
@@ -382,7 +382,7 @@ class KeyControlResource extends Resource
                 ->where('is_corrected', false)
                 ->where($record->getKeyName(), '<>', $record->getKey())
                 ->exists()) {
-                throw new \RuntimeException('O utilizador '.$holderName.' já tem uma chave em sua posse.');
+                throw new \RuntimeException('O utilizador '.$holderName.' já tem a chave da sala '.$room->name.' em sua posse. Não é possível ter duas chaves.');
             }
 
             $correction = $record->replicate();

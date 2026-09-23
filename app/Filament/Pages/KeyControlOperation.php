@@ -392,7 +392,7 @@ class KeyControlOperation extends Page implements HasForms
                     ->exists();
 
                 if ($holderHasActiveKey) {
-                    throw new \RuntimeException('O utilizador '.$holder->name.' já tem uma chave em sua posse.');
+                    throw new \RuntimeException('O utilizador '.$holder->name.' já tem a chave da sala '.$room->name.' em sua posse. Não é possível ter duas chaves.');
                 }
 
                 KeyControl::create([
