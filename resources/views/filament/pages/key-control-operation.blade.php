@@ -190,7 +190,11 @@
         .key-control-modal-pickUp { max-height: calc(100vh - 2rem) !important; overflow: visible !important; }
         .key-control-operation-modal .choices__list--dropdown { max-height: 16rem; overflow: hidden; }
         .key-control-operation-modal .choices__list--dropdown .choices__list { max-height: 13rem; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #94a3b8 transparent; }
-        .key-control-operation-modal .choices__list--dropdown .choices__item { padding-block: .65rem; }
+        .key-control-operation-modal .choices__list--dropdown .choices__item { display: flex; min-height: 3.25rem; align-items: center; padding: .85rem 1rem; }
+        .key-control-operation-modal .choices__list--dropdown .choices__item--choice.is-highlighted { color: #fff; background: #063b82; }
+        .key-control-operation-modal .choices__list--dropdown .choices__item--choice[aria-selected="true"] { color: #063b82; background: #dbeafe; font-weight: 700; }
+        .dark .key-control-operation-modal .choices__list--dropdown .choices__item--choice.is-highlighted { color: #fff; background: #1d4ed8; }
+        .dark .key-control-operation-modal .choices__list--dropdown .choices__item--choice[aria-selected="true"] { color: #dbeafe; background: #1e3a8a; }
         .dark .key-control-form-surface { background: #1f2937; }
         .dark .key-control-form-surface label { color: #f9fafb !important; }
         .dark .key-control-form-surface input, .dark .key-control-form-surface textarea, .dark .key-control-form-surface button { background-color: #111827 !important; border-color: #4b5563 !important; color: #f9fafb !important; }
