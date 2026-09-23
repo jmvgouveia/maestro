@@ -23,6 +23,14 @@ class Room extends Model
         return $this->hasMany(Schedule::class, 'id_room');
     }
 
+    public function activeKeyControl()
+    {
+        return $this->hasOne(KeyControl::class, 'room_id')
+            ->whereNull('returned_at')
+            ->where('is_corrected', false)
+            ->latest('picked_up_at');
+    }
+
     public function isAvailableFor(string $description, string $weekday): bool
     {
         return !$this->schedules()

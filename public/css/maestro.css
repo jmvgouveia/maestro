@@ -579,3 +579,34 @@
         transform: none;
     }
 }
+
+body.porter-interface .fi-topbar > nav {
+    background: white;
+    border-bottom-color: #e2e8f0;
+}
+
+body.porter-interface .fi-main-ctn {
+    background: #f4f7fb;
+}
+
+body.porter-interface .fi-main {
+    padding-top: 1.25rem;
+}
+
+body.porter-interface .fi-header-heading {
+    color: #172033;
+}
+
+body.porter-interface .fi-header-subheading {
+    display: none;
+}
+
+body.porter-interface .fi-breadcrumbs {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    body.porter-interface .fi-main {
+        padding-inline: 0.75rem;
+    }
+}
