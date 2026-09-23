@@ -88,7 +88,17 @@ class KeyControlOperation extends Page implements HasForms
                 $search = mb_strtolower($this->search);
                 $query->where(function ($query) use ($search): void {
                     $query->whereRaw('LOWER(name) like ?', ["%{$search}%"])
-                        ->orWhereHas('building', fn ($q) => $q->whereRaw('LOWER(name) like ?', ["%{$search}%"]));
+                    ->orWhereHas('building', function ($q) use ($search): void {
+                        $q->whereRaw('LOWER(name) like ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(address) like ?', ["%{$search}%"]);
+                    })
+                    ->orWhereHas('activeKeyControl', function ($query) use ($search): void {
+                        $query->whereHasMorph('holder', [Teacher::class, Student::class], function ($holderQuery) use ($search): void {
+                            $holderQuery
+                                ->whereRaw('LOWER(name) like ?', ["%{$search}%"])
+                                ->orWhereRaw('LOWER(COALESCE(number, \'\')) like ?', ["%{$search}%"]);
+                        });
+                    });
                 });
             })
             ->orderBy('name', $direction)

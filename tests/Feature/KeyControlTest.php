@@ -204,6 +204,35 @@ class KeyControlTest extends TestCase
             ->assertSet('availableRoomsCount', 1);
     }
 
+    public function test_room_search_matches_active_holder_name_and_number(): void
+    {
+        $porter = $this->porter();
+        $room = $this->room();
+        $teacher = $this->teacher();
+
+        UserBuildingAuthorization::create([
+            'user_id' => $porter->id,
+            'building_id' => $room->id_building,
+            'created_by' => $porter->id,
+        ]);
+
+        KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => now(),
+            'picked_up_by' => $porter->id,
+        ]);
+
+        $this->actingAs($porter);
+
+        Livewire::test(KeyControlOperation::class)
+            ->set('search', 'Professor Teste')
+            ->assertSet('rooms', fn ($rooms): bool => $rooms->contains('id', $room->id))
+            ->set('search', 'T001')
+            ->assertSet('rooms', fn ($rooms): bool => $rooms->contains('id', $room->id));
+    }
+
     public function test_porter_can_pick_up_and_return_key(): void
     {
         $porter = $this->porter();
