@@ -231,7 +231,7 @@ class KeyControlOperation extends Page implements HasForms
     public function selectPickUp(int $roomId): void
     {
         if (! $this->isAuthorizedRoom($roomId)) {
-            $this->sendError('Sala não autorizada.');
+            $this->sendError('Não tem autorização para operar esta sala.');
 
             return;
         }
@@ -246,7 +246,7 @@ class KeyControlOperation extends Page implements HasForms
     public function selectReturn(int $roomId): void
     {
         if (! $this->isAuthorizedRoom($roomId)) {
-            $this->sendError('Sala não autorizada.');
+            $this->sendError('Não tem autorização para operar esta sala.');
 
             return;
         }
@@ -261,7 +261,7 @@ class KeyControlOperation extends Page implements HasForms
     public function selectCorrect(int $roomId): void
     {
         if (! $this->isAuthorizedRoom($roomId)) {
-            $this->sendError('Sala não autorizada.');
+            $this->sendError('Não tem autorização para operar esta sala.');
 
             return;
         }
@@ -299,7 +299,7 @@ class KeyControlOperation extends Page implements HasForms
         $holder = $this->parseHolderSelection($data['holder'] ?? null);
 
         if ($holder === null) {
-            $this->sendError('Selecione uma pessoa válida.');
+            $this->sendError('Selecione um utilizador válido.');
 
             return;
         }
@@ -329,7 +329,7 @@ class KeyControlOperation extends Page implements HasForms
         $holder = $this->parseHolderSelection($data['holder'] ?? null);
 
         if ($holder === null) {
-            $this->sendError('Selecione uma pessoa válida.');
+            $this->sendError('Selecione um utilizador válido.');
 
             return;
         }
@@ -350,13 +350,13 @@ class KeyControlOperation extends Page implements HasForms
         $room = $this->getAuthorizedRoom($roomId);
 
         if ($room === null) {
-            $this->sendError('Sala não autorizada ou não encontrada.');
+            $this->sendError('A sala não está autorizada ou não existe.');
 
             return;
         }
 
         if (! in_array($holderType, [Teacher::class, Student::class], true)) {
-            $this->sendError('Tipo de pessoa inválido.');
+            $this->sendError('O utilizador selecionado é inválido.');
 
             return;
         }
@@ -364,13 +364,13 @@ class KeyControlOperation extends Page implements HasForms
         $holder = $holderType::find($holderId);
 
         if ($holder === null) {
-            $this->sendError('Pessoa não encontrada.');
+            $this->sendError('O utilizador selecionado é inválido.');
 
             return;
         }
 
         try {
-            DB::transaction(function () use ($room, $holderType, $holderId, $observations, $user): void {
+            DB::transaction(function () use ($room, $holderType, $holderId, $holder, $observations, $user): void {
                 Room::query()->lockForUpdate()->findOrFail($room->getKey());
 
                 $exists = KeyControl::query()
@@ -381,7 +381,7 @@ class KeyControlOperation extends Page implements HasForms
                     ->exists();
 
                 if ($exists) {
-                    throw new \RuntimeException('Já existe um levantamento ativo para esta sala.');
+                    throw new \RuntimeException('Esta sala já tem uma chave levantada.');
                 }
 
                 $holderHasActiveKey = KeyControl::query()
@@ -392,7 +392,7 @@ class KeyControlOperation extends Page implements HasForms
                     ->exists();
 
                 if ($holderHasActiveKey) {
-                    throw new \RuntimeException('Esta pessoa já tem uma chave levantada.');
+                    throw new \RuntimeException('O utilizador '.$holder->name.' já tem uma chave em sua posse.');
                 }
 
                 KeyControl::create([
@@ -419,7 +419,7 @@ class KeyControlOperation extends Page implements HasForms
         $room = $this->getAuthorizedRoom($roomId);
 
         if ($room === null) {
-            $this->sendError('Sala não autorizada ou não encontrada.');
+            $this->sendError('A sala não está autorizada ou não existe.');
 
             return;
         }
@@ -446,7 +446,7 @@ class KeyControlOperation extends Page implements HasForms
         });
 
         if ($active === null) {
-            $this->sendError('Não existe levantamento ativo para esta sala.');
+            $this->sendError('Esta sala não tem uma chave levantada.');
 
             return;
         }
@@ -462,7 +462,7 @@ class KeyControlOperation extends Page implements HasForms
         $room = $this->getAuthorizedRoom($roomId);
 
         if ($room === null) {
-            $this->sendError('Sala não autorizada ou não encontrada.');
+            $this->sendError('A sala não está autorizada ou não existe.');
 
             return;
         }
@@ -474,13 +474,13 @@ class KeyControlOperation extends Page implements HasForms
             ->first();
 
         if ($latest === null) {
-            $this->sendError('Não existe operação para corrigir.');
+            $this->sendError('Não existe um registo disponível para corrigir.');
 
             return;
         }
 
         if (! $user->can('update', $latest)) {
-            $this->sendError('Não tem permissão para corrigir esta operação.');
+            $this->sendError('Só pode corrigir o seu próprio movimento mais recente.');
 
             return;
         }
@@ -490,13 +490,13 @@ class KeyControlOperation extends Page implements HasForms
 
         if (! in_array($holderType, [Teacher::class, Student::class], true)
             || ! $holderType::query()->whereKey($holderId)->exists()) {
-            $this->sendError('Pessoa inválida.');
+            $this->sendError('O utilizador selecionado é inválido.');
 
             return;
         }
 
         if (! $user->can('correct key control') && ! $this->isAuthorizedRoom($roomId)) {
-            $this->sendError('Sala correta não autorizada.');
+            $this->sendError('A sala correta não está autorizada para si.');
 
             return;
         }

@@ -342,7 +342,7 @@ class KeyControlResource extends Resource
         }
 
         if ($record->is_corrected || $record->original_key_control_id !== null || $record->returned_at !== null) {
-            throw new \RuntimeException('Este registo já está fechado e não pode ser corrigido.');
+            throw new \RuntimeException('Este registo está fechado e não pode ser corrigido.');
         }
 
         if (! $user->can('update', $record)) {
@@ -351,13 +351,16 @@ class KeyControlResource extends Resource
 
         \DB::transaction(function () use ($record, $user, $reason, $changes): void {
             $roomId = (int) ($changes['room_id'] ?? $record->room_id);
+            $holderType = $changes['holder_type'] ?? $record->holder_type;
+            $holderId = (int) ($changes['holder_id'] ?? $record->holder_id);
+            $holderName = $holderType::query()->whereKey($holderId)->value('name') ?? 'selecionado';
 
             if (! $user->checkPermissionTo('correct key control')
                 && ! UserBuildingAuthorization::query()
                     ->where('user_id', $user->getKey())
                     ->whereHas('building.rooms', fn ($query) => $query->whereKey($roomId))
                     ->exists()) {
-                throw new \RuntimeException('A sala correta não está autorizada para este porteiro.');
+                throw new \RuntimeException('A sala correta não está autorizada para si.');
             }
 
             Room::query()->lockForUpdate()->findOrFail($roomId);
@@ -369,23 +372,23 @@ class KeyControlResource extends Resource
                 ->where($record->getKeyName(), '<>', $record->getKey())
                 ->lockForUpdate()
                 ->exists()) {
-                throw new \RuntimeException('A sala correta já tem uma chave levantada.');
+                throw new \RuntimeException('Esta sala já tem uma chave levantada.');
             }
 
             if ($record->isActive() && KeyControl::query()
-                ->where('holder_type', $changes['holder_type'] ?? $record->holder_type)
-                ->where('holder_id', (int) ($changes['holder_id'] ?? $record->holder_id))
+                ->where('holder_type', $holderType)
+                ->where('holder_id', $holderId)
                 ->whereNull('returned_at')
                 ->where('is_corrected', false)
                 ->where($record->getKeyName(), '<>', $record->getKey())
                 ->exists()) {
-                throw new \RuntimeException('Esta pessoa já tem uma chave levantada.');
+                throw new \RuntimeException('O utilizador '.$holderName.' já tem uma chave em sua posse.');
             }
 
             $correction = $record->replicate();
             $correction->room_id = $roomId;
-            $correction->holder_type = $changes['holder_type'] ?? $record->holder_type;
-            $correction->holder_id = (int) ($changes['holder_id'] ?? $record->holder_id);
+            $correction->holder_type = $holderType;
+            $correction->holder_id = $holderId;
             $correction->pick_up_observations = $changes['pick_up_observations'] ?? $record->pick_up_observations;
             $correction->return_observations = $changes['return_observations'] ?? $record->return_observations;
             $correction->original_key_control_id = $record->getKey();
