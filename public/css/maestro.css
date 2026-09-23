@@ -610,3 +610,33 @@ body.porter-interface .fi-breadcrumbs {
         padding-inline: 0.75rem;
     }
 }
+
+/* Ajustes dark da experiência do Porteiro. */
+.dark body.porter-interface .fi-main-ctn,
+.dark body.porter-interface .fi-body {
+    background: #0b1120;
+}
+
+.dark body.porter-interface .fi-topbar > nav {
+    background: #0f172a;
+    border-bottom-color: #334155;
+}
+
+.dark body.porter-interface .fi-header-heading,
+.dark body.porter-interface .maestro-user-name {
+    color: #f8fafc;
+}
+
+.dark body.porter-interface .maestro-user-role {
+    color: #94a3b8;
+}
+
+.dark body.porter-interface .fi-sidebar-item:not(.fi-active) .fi-sidebar-item-label,
+.dark body.porter-interface .fi-sidebar-item:not(.fi-active) .fi-sidebar-item-icon {
+    color: #cbd5e1;
+}
+
+.dark body.porter-interface .fi-sidebar-item.fi-active .fi-sidebar-item-label,
+.dark body.porter-interface .fi-sidebar-item.fi-active .fi-sidebar-item-icon {
+    color: #ffffff;
+}

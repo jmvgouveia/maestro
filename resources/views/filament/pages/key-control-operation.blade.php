@@ -169,6 +169,22 @@
         .porter-room-actions .fi-btn { min-height: 2.1rem; height: 2.1rem; padding-block: .2rem; white-space: nowrap; }
         .porter-empty { padding: 3rem 1rem; color: #64748b; text-align: center; background: white; border: 1px dashed #cbd5e1; border-radius: .85rem; }
         .porter-empty p { margin-top: .6rem; font-size: .9rem; }
+        .dark .porter-stat-card, .dark .porter-room-card, .dark .porter-search, .dark .porter-filter-select, .dark .porter-empty { color: #e5e7eb; background: #111827; border-color: #334155; }
+        .dark .porter-stat-card p, .dark .porter-toolbar p, .dark .porter-room-building, .dark .porter-date-value, .dark .porter-holder-number { color: #94a3b8; }
+        .dark .porter-stat-card strong, .dark .porter-toolbar h3, .dark .porter-room-heading h3, .dark .porter-holder-name { color: #f8fafc; }
+        .dark .porter-search input, .dark .porter-filter-select select { color: #f8fafc; }
+        .dark .porter-room-card.is-occupied { background: #1f1518; border-top-color: #ef4444; }
+        .dark .porter-stat-available.is-selected { background: #10251b; border-color: #22c55e; }
+        .dark .porter-stat-occupied.is-selected { background: #2a171a; border-color: #ef4444; }
+        .dark .porter-stat-total.is-selected { background: #12233d; border-color: #60a5fa; }
+        .dark .status-available, .dark .porter-holder-badge.is-student { color: #86efac; background: #14532d; }
+        .dark .status-occupied { color: #fca5a5; background: #7f1d1d; }
+        .dark .porter-holder-badge.is-teacher { color: #bfdbfe; background: #1e3a8a; }
+        .dark .porter-holder-avatar.is-student { color: #d8b4fe; background: #4c1d95; }
+        .dark .porter-holder-avatar.is-teacher { color: #bfdbfe; background: #1e3a8a; }
+        .dark .porter-available-copy { color: #86efac; }
+        .dark .porter-note { color: #cbd5e1; background: #1e293b; }
+        .dark .porter-key-avatar { color: #86efac; background: #14532d; }
         .key-control-form-surface { background: #f8fafc; }
         .key-control-operation-modal { border-radius: 1.5rem !important; }
         .dark .key-control-form-surface { background: #1f2937; }
