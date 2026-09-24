@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-24
+
+### Utilizadores e autenticacao
+
+- Adicionada ativacao de conta com data de ativacao e gestao do estado da conta.
+- Organizada a gestao de utilizadores por dados pessoais, conta, MFA, ativacao,
+  funcoes e encarregados de educacao.
+- Adicionada configuracao individual para exigir ou nao a configuracao de MFA.
+- Utilizadores existentes sem MFA nao ficam obrigados a configurar MFA apos a
+  migration; utilizadores novos mantem a exigencia por defeito.
+- Reforcados os bloqueios de login, reset de password, MFA pendente e alunos
+  associados para contas sem autorizacao.
+- Documentada a utilizacao de `INITIAL_ADMIN_PASSWORD` em `DEPLOY.md`.
+
 ## 2026-08-19
 
 ### Documentacao

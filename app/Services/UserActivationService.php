@@ -60,6 +60,7 @@ class UserActivationService
         $user->forceFill([
             'password' => $password,
             'is_active' => true,
+            'activated_at' => now(),
             'email_verified_at' => $user->email_verified_at ?? now(),
             'activation_token' => null,
             'activation_token_expires_at' => null,

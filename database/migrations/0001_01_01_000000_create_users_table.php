@@ -5,6 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -42,7 +43,7 @@ return new class extends Migration
             [
                 'name' => 'admin',
                 'email' => 'admin@admin.pt',
-                'password' => Hash::make('12345'),
+                'password' => Hash::make(env('INITIAL_ADMIN_PASSWORD', Str::random(64))),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

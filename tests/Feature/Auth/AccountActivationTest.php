@@ -50,6 +50,7 @@ class AccountActivationTest extends TestCase
 
         $user->refresh();
         $this->assertTrue($user->is_active);
+        $this->assertNotNull($user->activated_at);
         $this->assertTrue(Hash::check('New-password-123!', $user->password));
         $this->assertTrue($user->hasAllRoles(['Super Admin', 'Aluno']));
         $this->assertNull($user->activation_token);

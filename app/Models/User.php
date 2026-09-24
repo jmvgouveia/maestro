@@ -35,6 +35,8 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
         'email',
         'password',
         'is_active',
+        'mfa_required',
+        'activated_at',
         'activation_token',
         'activation_token_expires_at',
     ];
@@ -63,6 +65,8 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'mfa_required' => 'boolean',
+            'activated_at' => 'datetime',
             'activation_token_expires_at' => 'datetime',
         ];
     }
@@ -242,11 +246,22 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
     {
         static::creating(function (self $user): void {
             $user->mfa_grace_until ??= now()->addDays((int) config('two-factor.grace_days'));
+            $user->mfa_required ??= true;
         });
     }
 
     public function isMfaGraceExpired(): bool
     {
         return $this->mfa_grace_until?->isPast() ?? true;
+    }
+
+    public function requiresMfaSetup(): bool
+    {
+        return (bool) $this->mfa_required;
+    }
+
+    public function isPendingActivation(): bool
+    {
+        return ! $this->is_active && filled($this->activation_token);
     }
 }

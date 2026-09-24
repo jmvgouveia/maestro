@@ -41,7 +41,7 @@ class Login extends \Filament\Pages\Auth\Login
 
         $user = User::query()->where('email', $credentials['email'])->first();
 
-        if (! $user instanceof User || ! $user->canAccessPanel(Filament::getCurrentPanel())) {
+        if (! $user instanceof User || ! $user->is_active || ! $user->canAccessPanel(Filament::getCurrentPanel())) {
             $this->throwFailureValidationException();
         }
 
@@ -69,6 +69,7 @@ class Login extends \Filament\Pages\Auth\Login
         $user = $pendingUserId ? User::find($pendingUserId) : null;
 
         if (! $user instanceof User
+            || ! $user->is_active
             || ! $expiresAt instanceof Carbon
             || $expiresAt->isPast()
             || $user->isMfaExemptGuardian()

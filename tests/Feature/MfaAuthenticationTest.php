@@ -59,6 +59,43 @@ class MfaAuthenticationTest extends TestCase
         $this->assertNotNull($user->fresh()->last_login_at);
     }
 
+    public function test_filament_login_rejects_an_inactive_user(): void
+    {
+        $user = User::factory()->create(['is_active' => false]);
+        $user->assignRole(Role::findByName('Professor'));
+
+        Livewire::test(Login::class)
+            ->fillForm([
+                'email' => $user->email,
+                'password' => 'password',
+            ])
+            ->call('authenticate')
+            ->assertHasErrors(['data.email']);
+
+        $this->assertGuest();
+    }
+
+    public function test_deactivated_user_cannot_finish_a_pending_mfa_challenge(): void
+    {
+        $user = $this->createMfaUser();
+
+        $login = Livewire::test(Login::class)
+            ->fillForm([
+                'email' => $user->email,
+                'password' => 'password',
+            ])
+            ->call('authenticate');
+
+        $user->forceFill(['is_active' => false])->save();
+
+        $login
+            ->fillForm(['two_factor_code' => $user->makeTwoFactorCode()])
+            ->call('authenticate')
+            ->assertHasErrors(['data.email']);
+
+        $this->assertGuest();
+    }
+
     public function test_guardian_only_user_can_login_without_an_mfa_code(): void
     {
         $user = User::factory()->create();

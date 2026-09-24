@@ -71,6 +71,10 @@ class EnforceMfa
             return redirect()->to(Filament::getPanel('admin')->getLoginUrl());
         }
 
+        if (! $user->requiresMfaSetup()) {
+            return $next($request);
+        }
+
         if (! $user->isMfaGraceExpired() || $request->routeIs(MfaSetup::getRouteName('admin'))) {
             return $next($request);
         }

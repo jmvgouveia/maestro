@@ -132,6 +132,9 @@ MAIL_PASSWORD=...
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS="noreply@exemplo.pt"
 MAIL_FROM_NAME="Meu Horario"
+
+# Apenas para uma base de dados nova. Nunca guardar este valor no Git.
+INITIAL_ADMIN_PASSWORD="PASSWORD_INICIAL_FORTE"
 ```
 
 Validar a configuracao antes de continuar:
@@ -140,6 +143,13 @@ Validar a configuracao antes de continuar:
 php artisan config:clear
 php artisan about
 ```
+
+`INITIAL_ADMIN_PASSWORD` so e usado quando a migration inicial cria o primeiro
+utilizador. Em bases de dados existentes, nao recria nem altera utilizadores.
+Se o primeiro utilizador for criado numa instalação nova, o seeder atribui-lhe
+o role `Super Admin`. Numa instalação existente, alterar a password do
+administrador diretamente no sistema antes de abrir o ambiente ao público.
+Nunca executar `migrate:fresh` em producao.
 
 ## 8. Dependencias e primeira preparacao
 
@@ -311,6 +321,8 @@ dados e ter um backup valido.
 - [ ] HTTPS ativo e a funcionar.
 - [ ] `APP_DEBUG=false`.
 - [ ] `.env` configurado e fora do Git.
+- [ ] `INITIAL_ADMIN_PASSWORD` definido apenas numa instalação nova.
+- [ ] Password do administrador inicial alterada/confirmada em instalações existentes.
 - [ ] Base de dados criada e com backup.
 - [ ] `php artisan migrate --force` executado.
 - [ ] `RolesAndPermissionsSeeder` executado.

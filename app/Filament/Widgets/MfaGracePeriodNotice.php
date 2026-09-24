@@ -16,6 +16,9 @@ class MfaGracePeriodNotice extends Widget
     {
         $user = Filament::auth()->user();
 
-        return $user instanceof User && ! $user->hasTwoFactorEnabled() && ! $user->isMfaGraceExpired();
+        return $user instanceof User
+            && $user->requiresMfaSetup()
+            && ! $user->hasTwoFactorEnabled()
+            && ! $user->isMfaGraceExpired();
     }
 }
