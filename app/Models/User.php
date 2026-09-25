@@ -210,6 +210,8 @@ class User extends Authenticatable implements FilamentUser, TwoFactorAuthenticat
                 'Gestor de Horários',
                 'Porteiro',
                 'Gestão de Chaves',
+                'Gestão de porteiro',
+                'Admin Porteiro',
             ]);
     }
 

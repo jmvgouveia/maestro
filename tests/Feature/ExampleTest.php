@@ -60,11 +60,13 @@ class ExampleTest extends TestCase
             ->all();
 
         $this->assertEqualsCanonicalizing([
-            'Académico',
             'Ajuda',
             'Horários',
             'Recursos',
             'Administração',
+            'Aluno',
+            'Gestão Pedagógica',
+            'Porteiro',
         ], $groups);
     }
 

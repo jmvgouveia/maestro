@@ -3,12 +3,15 @@
 namespace App\Filament\Pages;
 
 use App\Models\KeyControl;
+use App\Models\KeyControlFloorKeyAccess;
+use App\Models\KeyControlEvent;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\UserBuildingAuthorization;
+use App\Services\KeyControlClosureService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -30,6 +33,8 @@ class KeyControlOperation extends Page implements HasForms
     protected static ?string $navigationGroup = 'Porteiro';
 
     protected static ?string $navigationLabel = 'Salas';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $title = 'Controlo de Chaves';
 
@@ -82,8 +87,8 @@ class KeyControlOperation extends Page implements HasForms
         $direction = in_array($this->roomSort, ['asc', 'desc'], true) ? $this->roomSort : 'asc';
 
         return $this->filteredRoomsQuery()
-            ->when($this->selectedStatus === 'available', fn ($query) => $query->whereDoesntHave('activeKeyControl'))
-            ->when($this->selectedStatus === 'occupied', fn ($query) => $query->whereHas('activeKeyControl'))
+            ->when($this->selectedStatus === 'available', fn ($query) => $query->whereDoesntHave('activeKeyControl')->whereDoesntHave('activeFloorKeyAccess'))
+            ->when($this->selectedStatus === 'occupied', fn ($query) => $query->where(fn ($query) => $query->whereHas('activeKeyControl')->orWhereHas('activeFloorKeyAccess')))
             ->when($this->search !== '', function ($query): void {
                 $search = mb_strtolower($this->search);
                 $query->where(function ($query) use ($search): void {
@@ -98,6 +103,13 @@ class KeyControlOperation extends Page implements HasForms
                                 ->whereRaw('LOWER(name) like ?', ["%{$search}%"])
                                 ->orWhereRaw('LOWER(COALESCE(number, \'\')) like ?', ["%{$search}%"]);
                         });
+                    });
+                    $query->orWhereHas('activeFloorKeyAccess.occupant', function ($occupantQuery) use ($search): void {
+                        $occupantQuery->whereRaw('LOWER(name) like ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(COALESCE(number, \'\')) like ?', ["%{$search}%"]);
+                    });
+                    $query->orWhereHas('features', function ($featureQuery) use ($search): void {
+                        $featureQuery->whereRaw('LOWER(name) like ?', ["%{$search}%"]);
                     });
                 });
             })
@@ -126,7 +138,7 @@ class KeyControlOperation extends Page implements HasForms
     public function getOccupiedRoomsCountProperty(): int
     {
         return (int) $this->filteredRoomsQuery()
-            ->whereHas('activeKeyControl')
+            ->where(fn ($query) => $query->whereHas('activeKeyControl')->orWhereHas('activeFloorKeyAccess'))
             ->count();
     }
 
@@ -146,7 +158,7 @@ class KeyControlOperation extends Page implements HasForms
         $user = auth()->user();
 
         return Room::query()
-            ->with(['building', 'activeKeyControl.holder'])
+            ->with(['building', 'features', 'activeKeyControl.holder', 'activeFloorKeyAccess.occupant', 'pendingKeyControls.holder'])
             ->whereHas('building.userBuildingAuthorizations', fn ($query) => $query->where('user_id', $user->getKey()));
     }
 
@@ -159,6 +171,16 @@ class KeyControlOperation extends Page implements HasForms
     public function activeKeyControlFor(Room $room): ?KeyControl
     {
         return $room->activeKeyControl;
+    }
+
+    public function activeFloorKeyAccessFor(Room $room): ?KeyControlFloorKeyAccess
+    {
+        return $room->activeFloorKeyAccess;
+    }
+
+    public function getSelectedFloorAccessProperty(): ?KeyControlFloorKeyAccess
+    {
+        return $this->rooms->firstWhere('id', $this->selectedRoomId)?->activeFloorKeyAccess;
     }
 
     public function pickUpForm(Form $form): Form
@@ -267,7 +289,20 @@ class KeyControlOperation extends Page implements HasForms
         }
 
         $this->selectedRoomId = $roomId;
-        $this->mode = 'correct';
+        $floorAccess = $this->getAuthorizedRoom($roomId)?->activeFloorKeyAccess;
+        $this->mode = $floorAccess ? 'floorCorrect' : 'correct';
+
+        if ($floorAccess) {
+            $this->correctForm->fill([
+                'room_id' => $roomId,
+                'holder' => Teacher::class.':'.$floorAccess->occupant_id,
+            ]);
+            $this->pickUpForm->fill();
+            $this->returnForm->fill();
+
+            return;
+        }
+
         $latest = KeyControl::query()
             ->where('room_id', $roomId)
             ->where('is_corrected', false)
@@ -288,9 +323,15 @@ class KeyControlOperation extends Page implements HasForms
     {
         $this->selectedRoomId = null;
         $this->mode = null;
+        unset($this->rooms, $this->selectedFloorAccess);
         $this->pickUpForm->fill();
         $this->returnForm->fill();
         $this->correctForm->fill();
+    }
+
+    public function refreshRoomState(): void
+    {
+        unset($this->rooms, $this->selectedFloorAccess);
     }
 
     public function submitPickUp(): void
@@ -314,6 +355,22 @@ class KeyControlOperation extends Page implements HasForms
         $this->cancel();
     }
 
+    public function openWithFloorKeyFromModal(): void
+    {
+        $data = $this->pickUpForm->getState();
+        $holder = $this->parseHolderSelection($data['holder'] ?? null);
+
+        if ($holder === null || $holder['type'] !== Teacher::class) {
+            $this->sendError('Selecione um professor para abrir a sala com a chave do funcionário de piso.');
+
+            return;
+        }
+
+        if ($this->openWithFloorKey((int) $this->selectedRoomId, $holder['id'])) {
+            $this->cancel();
+        }
+    }
+
     public function submitReturn(): void
     {
         $data = $this->returnForm->getState();
@@ -323,6 +380,86 @@ class KeyControlOperation extends Page implements HasForms
         $this->cancel();
     }
 
+    public function submitEndFloorKeyUse(): void
+    {
+        $access = $this->selectedFloorAccess;
+
+        if ($access === null) {
+            $this->sendError('Esta sala não está ocupada através da chave do funcionário de piso.');
+
+            return;
+        }
+
+        try {
+            app(KeyControlClosureService::class)->endFloorKeyAccess($access, auth()->user());
+            $this->sendSuccess('Utilização da sala terminada.');
+            $this->cancel();
+        } catch (\RuntimeException $exception) {
+            $this->sendError($exception->getMessage());
+        }
+    }
+
+    public function releaseRoom(int $roomId): void
+    {
+        $closureService = app(KeyControlClosureService::class);
+        $room = $this->getAuthorizedRoom($roomId);
+        $active = $room?->activeKeyControl;
+
+        if ($room === null || $active === null) {
+            $this->sendError('Esta sala não tem uma chave operacional para libertar.');
+
+            return;
+        }
+
+        if ($active->holder_type !== Teacher::class) {
+            $this->sendError('Esta ação só está disponível para chaves entregues a professores.');
+
+            return;
+        }
+
+        try {
+            $closureService->releaseRoom($active, auth()->user());
+            $this->sendSuccess('Sala libertada. A chave continua pendente com o professor.');
+            $this->cancel();
+        } catch (\RuntimeException $exception) {
+            $this->sendError($exception->getMessage());
+        }
+    }
+
+    public function openWithFloorKey(int $roomId, ?int $occupantId = null): bool
+    {
+        $closureService = app(KeyControlClosureService::class);
+        $room = $this->getAuthorizedRoom($roomId);
+        $pending = $room?->pendingKeyControls()
+            ->whereNotNull('room_released_at')
+            ->first();
+
+        if ($room === null || $pending === null) {
+            $this->sendError('Não existe uma chave pendente associada a esta sala.');
+
+            return false;
+        }
+
+        $occupant = $occupantId === null && $pending->holder_type === Teacher::class
+            ? $pending->holder
+            : Teacher::find($occupantId);
+
+        if ($occupant === null) {
+            $this->sendError('Selecione um professor válido.');
+
+            return false;
+        }
+
+        try {
+            $closureService->recordFloorKeyAccess($pending, auth()->user(), $occupant);
+            $this->sendSuccess('Abertura registada com a chave do funcionário de piso.');
+            return true;
+        } catch (\RuntimeException $exception) {
+            $this->sendError($exception->getMessage());
+            return false;
+        }
+    }
+
     public function submitCorrect(): void
     {
         $data = $this->correctForm->getState();
@@ -330,6 +467,38 @@ class KeyControlOperation extends Page implements HasForms
 
         if ($holder === null) {
             $this->sendError('Selecione um utilizador válido.');
+
+            return;
+        }
+
+        if ($this->mode === 'floorCorrect') {
+            if ($holder['type'] !== Teacher::class || $this->selectedFloorAccess === null) {
+                $this->sendError('Selecione um professor válido para corrigir a abertura.');
+
+                return;
+            }
+
+            $access = $this->selectedFloorAccess;
+            DB::transaction(function () use ($access, $data, $holder): void {
+                $before = KeyControlEvent::snapshotFloorKeyAccess($access);
+                $access->forceFill([
+                    'room_id' => (int) $data['room_id'],
+                    'occupant_type' => Teacher::class,
+                    'occupant_id' => $holder['id'],
+                    'reason' => $data['reason'],
+                ])->save();
+
+                KeyControlEvent::log(
+                    $access->keyControl?->originalEventKeyControlId() ?? $access->key_control_id,
+                    KeyControlEvent::CORRECTED,
+                    auth()->id(),
+                    ['reason' => $data['reason'], 'before' => $before, 'after' => KeyControlEvent::snapshotFloorKeyAccess($access)],
+                    $access->getKey()
+                );
+            });
+
+            $this->sendSuccess('Abertura corrigida com sucesso.');
+            $this->cancel();
 
             return;
         }
@@ -376,6 +545,7 @@ class KeyControlOperation extends Page implements HasForms
                 $exists = KeyControl::query()
                     ->where('room_id', $room->getKey())
                     ->whereNull('returned_at')
+                    ->whereNull('room_released_at')
                     ->where('is_corrected', false)
                     ->lockForUpdate()
                     ->exists();
@@ -397,7 +567,7 @@ class KeyControlOperation extends Page implements HasForms
                     throw new \RuntimeException($holder->name.' já tem a chave da sala '.$holderActiveKey->room?->name.' em sua posse. Não é possível ter duas chaves.');
                 }
 
-                KeyControl::create([
+                $keyControl = KeyControl::create([
                     'room_id' => $room->getKey(),
                     'holder_type' => $holderType,
                     'holder_id' => $holderId,
@@ -405,6 +575,15 @@ class KeyControlOperation extends Page implements HasForms
                     'pick_up_observations' => $observations,
                     'picked_up_by' => $user->getKey(),
                 ]);
+
+                KeyControlEvent::log(
+                    $keyControl->originalEventKeyControlId(),
+                    KeyControlEvent::KEY_PICKED_UP,
+                    $user->getKey(),
+                    ['observations' => $observations],
+                    null,
+                    $keyControl->picked_up_at
+                );
             });
 
             $this->sendSuccess('Chave da sala '.$room->name.' entregue a '.$holder->name.' com sucesso.');
@@ -432,6 +611,7 @@ class KeyControlOperation extends Page implements HasForms
             $active = KeyControl::query()
                 ->where('room_id', $room->getKey())
                 ->whereNull('returned_at')
+                ->whereNull('room_released_at')
                 ->where('is_corrected', false)
                 ->lockForUpdate()
                 ->first();
@@ -442,6 +622,15 @@ class KeyControlOperation extends Page implements HasForms
                     'return_observations' => $observations,
                     'returned_by' => $user->getKey(),
                 ]);
+
+                KeyControlEvent::log(
+                    $active->originalEventKeyControlId(),
+                    KeyControlEvent::KEY_RETURNED,
+                    $user->getKey(),
+                    ['return_observations' => $observations],
+                    null,
+                    $active->returned_at
+                );
             }
 
             return $active;

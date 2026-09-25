@@ -8,13 +8,18 @@ use App\Filament\Resources\KeyControlResource\Pages\ListKeyControls;
 use App\Filament\Resources\UserBuildingAuthorizationResource;
 use App\Models\Building;
 use App\Models\KeyControl;
+use App\Models\KeyControlReportRecipient;
 use App\Models\Room;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\UserBuildingAuthorization;
+use App\Notifications\KeyControlDailySummaryNotification;
+use App\Notifications\KeyControlReleasedNotification;
+use App\Services\KeyControlClosureService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -272,6 +277,106 @@ class KeyControlTest extends TestCase
         $active->refresh();
         $this->assertNotNull($active->returned_at);
         $this->assertSame('Devolvida', $active->return_observations);
+    }
+
+    public function test_porter_can_release_a_room_without_marking_the_key_as_returned(): void
+    {
+        $porter = $this->porter();
+        $room = $this->room();
+        $teacher = $this->teacher();
+
+        UserBuildingAuthorization::create([
+            'user_id' => $porter->id,
+            'building_id' => $room->id_building,
+            'created_by' => $porter->id,
+        ]);
+
+        KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => now(),
+            'picked_up_by' => $porter->id,
+        ]);
+
+        $this->actingAs($porter);
+
+        Livewire::test(KeyControlOperation::class)
+            ->call('releaseRoom', $room->id)
+            ->assertHasNoErrors();
+
+        $key = KeyControl::query()->first();
+        $this->assertNull($key->returned_at);
+        $this->assertNotNull($key->room_released_at);
+        $this->assertTrue($room->fresh()->activeKeyControl === null);
+        $this->assertDatabaseHas('key_control_events', [
+            'key_control_id' => $key->id,
+            'event_type' => 'room_released',
+            'performed_by' => $porter->id,
+        ]);
+
+        Livewire::test(KeyControlOperation::class)
+            ->call('openWithFloorKey', $room->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('key_control_floor_key_accesses', [
+            'key_control_id' => $key->id,
+            'room_id' => $room->id,
+            'accessed_by' => $porter->id,
+        ]);
+        $this->assertDatabaseHas('key_control_events', [
+            'key_control_id' => $key->id,
+            'event_type' => 'floor_key_opened',
+            'performed_by' => $porter->id,
+        ]);
+    }
+
+    public function test_releasing_a_room_notifies_the_teacher_once(): void
+    {
+        Notification::fake();
+        $porter = $this->porter();
+        $teacherUser = $this->teacherUser();
+        $teacher = $this->teacher();
+        $teacher->update(['id_user' => $teacherUser->id]);
+        $room = $this->room();
+        $key = KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => now(),
+            'picked_up_by' => $porter->id,
+        ]);
+
+        app(KeyControlClosureService::class)->releaseRoom($key, $porter);
+
+        Notification::assertSentTo($teacherUser, KeyControlReleasedNotification::class);
+    }
+
+    public function test_daily_closure_sends_summary_to_external_recipient(): void
+    {
+        Notification::fake();
+        $porter = $this->porter();
+        $room = $this->room();
+        $teacher = $this->teacher();
+        $key = KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => now(),
+            'picked_up_by' => $porter->id,
+        ]);
+        KeyControlReportRecipient::create([
+            'type' => 'external',
+            'email' => 'relatorio@example.test',
+            'is_active' => true,
+            'report_types' => [KeyControlClosureService::DAILY_REPORT_TYPE],
+        ]);
+
+        app(KeyControlClosureService::class)->dailyClosure();
+
+        Notification::assertSentOnDemand(KeyControlDailySummaryNotification::class);
+        $this->assertNotNull($key->fresh()->room_released_at);
+        $this->assertNotNull($key->fresh()->included_in_summary_at);
     }
 
     public function test_duplicate_active_pickup_is_blocked(): void

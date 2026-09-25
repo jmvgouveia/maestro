@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="porter-page space-y-6">
+    <div class="porter-page space-y-6" wire:poll.30s="refreshRoomState">
         <div class="porter-hero">
             <div>
                 <p class="porter-eyebrow">Controlo operacional</p>
@@ -60,45 +60,50 @@
         @else
             <div class="key-control-grid">
                 @foreach ($this->rooms as $room)
-                    @php($active = $this->activeKeyControlFor($room))
+                     @php($active = $this->activeKeyControlFor($room))
+                     @php($floorAccess = $this->activeFloorKeyAccessFor($room))
+                     @php($pending = $room->pendingKeyControls->first())
                     <article
-                        class="porter-room-card porter-room-card-action {{ $active ? 'is-occupied' : 'is-available' }}"
+                         class="porter-room-card porter-room-card-action relative {{ $active || $floorAccess ? 'is-occupied' : 'is-available' }}"
                         role="button"
                         tabindex="0"
-                        wire:click="{{ $active ? 'selectReturn('.$room->id.')' : 'selectPickUp('.$room->id.')' }}"
-                        wire:keydown.enter="{{ $active ? 'selectReturn('.$room->id.')' : 'selectPickUp('.$room->id.')' }}"
-                        wire:keydown.space.prevent="{{ $active ? 'selectReturn('.$room->id.')' : 'selectPickUp('.$room->id.')' }}"
-                        aria-label="{{ $active ? 'Devolver chave da '.$room->name : 'Levantar chave da '.$room->name }}"
+                         wire:click="{{ $active || $floorAccess ? 'selectReturn('.$room->id.')' : 'selectPickUp('.$room->id.')' }}"
+                         wire:keydown.enter="{{ $active || $floorAccess ? 'selectReturn('.$room->id.')' : 'selectPickUp('.$room->id.')' }}"
+                         wire:keydown.space.prevent="{{ $active || $floorAccess ? 'selectReturn('.$room->id.')' : 'selectPickUp('.$room->id.')' }}"
+                         aria-label="{{ $active || $floorAccess ? 'Consultar ocupação da '.$room->name : 'Levantar chave da '.$room->name }}"
                     >
                         <div class="porter-room-heading">
                             <div><p class="porter-room-building">{{ $room->building?->name ?? 'Edifício não identificado' }}</p><h3>{{ $room->name }}</h3></div>
-                            <span class="porter-status {{ $active ? 'status-occupied' : 'status-available' }}"><span aria-hidden="true"></span>{{ $active ? 'Ocupada' : 'Livre' }}</span>
+                             <span class="porter-status {{ $active || $floorAccess ? 'status-occupied' : 'status-available' }}"><span aria-hidden="true"></span>{{ $active || $floorAccess ? 'Ocupada' : 'Livre' }}</span>
                         </div>
                         <div class="porter-room-details">
-                            @if ($active)
-                                <div class="porter-active-info">
-                                    <span class="porter-holder-avatar {{ $active->holderTypeLabel() === 'Aluno' ? 'is-student' : 'is-teacher' }}">
-                                        @if ($active->holderTypeLabel() === 'Aluno')
-                                            <x-heroicon-o-academic-cap class="h-6 w-6" aria-hidden="true" />
-                                        @else
-                                            <x-heroicon-o-user class="h-6 w-6" aria-hidden="true" />
-                                        @endif
-                                    </span>
-                                    <div class="porter-active-copy">
-                                        <div class="porter-holder-meta">
-                                            <span class="porter-holder-badge {{ $active->holderTypeLabel() === 'Aluno' ? 'is-student' : 'is-teacher' }}">{{ mb_strtoupper($active->holderTypeLabel()) }}</span>
-                                            <span class="porter-holder-number">{{ $active->holder?->number ?: 'Sem número' }}</span>
-                                        </div>
-                                        <strong class="porter-holder-name">{{ $active->holder?->name ?? 'Desconhecido' }}</strong>
-                                        <p class="porter-date-value"><x-heroicon-o-calendar-days class="h-5 w-5" aria-hidden="true" /><span>{{ $active->picked_up_at->format('d/m/Y H:i') }}</span></p>
-                                    </div>
-                                </div>
-                                @if ($active->pick_up_observations)<p class="porter-note">{{ $active->pick_up_observations }}</p>@endif
-                            @else
-                                <div class="porter-available-copy"><span class="porter-key-avatar"><x-heroicon-o-key class="h-6 w-6" /></span><strong>Chave disponível</strong></div>
-                            @endif
-                        </div>
-                    </article>
+                             @if ($active)
+                                 <div class="porter-active-info">
+                                     <span class="porter-holder-avatar {{ $active->holderTypeLabel() === 'Aluno' ? 'is-student' : 'is-teacher' }}">
+                                         @if ($active->holderTypeLabel() === 'Aluno')
+                                             <x-heroicon-o-academic-cap class="h-6 w-6" aria-hidden="true" />
+                                         @else
+                                             <x-heroicon-o-user class="h-6 w-6" aria-hidden="true" />
+                                         @endif
+                                     </span>
+                                     <div class="porter-active-copy">
+                                         <div class="porter-holder-meta">
+                                             <span class="porter-holder-badge {{ $active->holderTypeLabel() === 'Aluno' ? 'is-student' : 'is-teacher' }}">{{ mb_strtoupper($active->holderTypeLabel()) }}</span>
+                                             <span class="porter-holder-number">{{ $active->holder?->number ?: 'Sem número' }}</span>
+                                         </div>
+                                         <strong class="porter-holder-name">{{ $active->holder?->name ?? 'Desconhecido' }}</strong>
+                                         <p class="porter-date-value"><x-heroicon-o-calendar-days class="h-5 w-5" aria-hidden="true" /><span>{{ $active->picked_up_at->format('d/m/Y H:i') }}</span></p>
+                                     </div>
+                                 </div>
+                                 @if ($active->pick_up_observations)<p class="porter-note">{{ $active->pick_up_observations }}</p>@endif
+                             @elseif ($floorAccess)
+                                 <div class="porter-active-info"><span class="porter-holder-avatar is-teacher"><x-heroicon-o-user class="h-6 w-6" /></span><div class="porter-active-copy"><div class="porter-holder-meta"><span class="porter-holder-badge is-teacher">PROFESSOR</span><span class="porter-holder-number">{{ $floorAccess->occupant?->number ?: 'Sem número' }}</span></div><strong class="porter-holder-name">{{ $floorAccess->occupant?->name ?? 'Desconhecido' }}</strong><p class="porter-date-value"><x-heroicon-o-calendar-days class="h-5 w-5" /><span>{{ $floorAccess->accessed_at->format('d/m/Y H:i') }}</span></p></div></div>
+                             @else
+                                 <div class="porter-available-copy"><span class="porter-key-avatar"><x-heroicon-o-key class="h-6 w-6" /></span><strong>Chave disponível</strong></div>
+                             @endif
+                          </div>
+                           @if ($floorAccess)<span title="Acesso com chave do funcionário de piso" aria-label="Acesso com chave do funcionário de piso" class="floor-key-icon"><x-heroicon-o-key class="h-4 w-4" /></span>@endif
+                      </article>
                 @endforeach
             </div>
         @endif
@@ -134,7 +139,8 @@
         .porter-filters { display: grid; grid-template-columns: minmax(14rem, 1.6fr) repeat(2, minmax(10rem, 1fr)); align-items: center; gap: .65rem; width: 100%; }
         .porter-filter-select { display: flex; align-items: center; gap: .55rem; min-width: 0; min-height: 4.5rem; padding: .65rem .8rem; color: #64748b; background: white; border: 1px solid #dbe4f0; border-radius: .65rem; box-shadow: 0 1px 2px rgb(15 23 42 / 3%); }
         .porter-filter-select select { width: 100%; color: #172033; background: transparent; border: 0; outline: 0; font-size: .85rem; }
-        .porter-room-card { display: flex; min-height: 10.75rem; flex-direction: column; padding: .95rem 1rem; background: white; border: 1px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: .85rem; box-shadow: 0 2px 5px rgb(15 23 42 / 4%); transition: box-shadow 150ms ease, transform 150ms ease; }
+         .porter-room-card { position: relative; display: flex; min-height: 10.75rem; flex-direction: column; padding: .95rem 1rem; background: white; border: 1px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: .85rem; box-shadow: 0 2px 5px rgb(15 23 42 / 4%); transition: box-shadow 150ms ease, transform 150ms ease; }
+         .floor-key-icon { position: absolute; right: .75rem; bottom: .75rem; display: inline-flex; color: #2563eb; }
         .porter-room-card:hover { box-shadow: 0 10px 22px rgb(15 23 42 / 8%); transform: translateY(-1px); }
         .porter-room-card-action { cursor: pointer; }
         .porter-room-card-action:focus-visible { outline: 3px solid #ffbf00; outline-offset: 3px; }
@@ -155,7 +161,8 @@
         .porter-holder-avatar.is-student { color: #c2410c; background: #ffedd5; }
         .porter-holder-avatar.is-teacher { color: #1d4ed8; background: #dbeafe; }
         .porter-field-label { display: block; margin: 0 0 .35rem; color: #94a3b8; font-size: .68rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
-        .porter-active-copy { min-width: 0; flex: 1; }
+         .porter-active-copy { min-width: 0; flex: 1; }
+         .porter-holder-meta { display: flex; align-items: center; gap: .4rem; }
         .porter-holder-name { display: block; max-width: 100%; margin-top: .65rem; overflow: hidden; color: #172033; font-size: .95rem; font-weight: 750; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
         .porter-holder-number { color: #64748b; font-size: .8rem; font-weight: 500; }
         .porter-date-value { display: flex !important; align-items: center; gap: .5rem; margin-top: .35rem !important; color: #475569; font-size: .8rem; font-weight: 500; }
@@ -210,13 +217,17 @@
             <button type="button" class="absolute inset-0 h-full w-full cursor-default" wire:click="cancel" aria-label="Fechar"></button>
             <div class="key-control-operation-modal key-control-modal-{{ $mode }} relative z-10 max-h-[90vh] w-full overflow-y-auto border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-900 sm:p-8" style="max-width: 46rem; width: calc(100% - 2rem);">
                 <div class="mb-7 flex items-start justify-between gap-5 border-b border-gray-100 pb-6 dark:border-gray-800">
-                    <div class="flex items-start gap-3"><div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300"><x-heroicon-o-key class="h-6 w-6" /></div><div><p class="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">Controlo de Chaves</p><h2 class="mt-1 text-xl font-bold text-gray-950 dark:text-white">{{ $mode === 'pickUp' ? 'Levantar chave' : ($mode === 'return' ? 'Devolver chave' : 'Corrigir última operação') }}</h2><p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $mode === 'pickUp' ? 'Selecione quem vai receber a chave.' : 'Confirme os dados antes de concluir.' }}</p></div></div>
+                     <div class="flex items-start gap-3"><div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300"><x-heroicon-o-key class="h-6 w-6" /></div><div><p class="text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">Controlo de Chaves</p><h2 class="mt-1 text-xl font-bold text-gray-950 dark:text-white">{{ $mode === 'pickUp' ? 'Levantar chave' : ($mode === 'return' ? 'Devolver chave' : 'Corrigir última operação') }}</h2><p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ $mode === 'pickUp' ? 'Selecione quem vai receber a chave.' : 'Confirme os dados antes de concluir.' }}</p></div></div>
                     <div class="flex shrink-0 items-center gap-2"><span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-white" style="background-color: #063b82;"><x-heroicon-o-building-office-2 class="h-4 w-4" />{{ $this->selectedRoomName }}</span><button type="button" wire:click="cancel" class="rounded-xl p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Fechar"><x-heroicon-o-x-mark class="h-6 w-6" /></button></div>
                 </div>
-                @if ($mode === 'pickUp')
-                     <form wire:submit.prevent="submitPickUp" class="space-y-4"><div class="key-control-form-surface rounded-2xl p-6">{{ $this->pickUpForm }}</div><div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end dark:border-gray-800"><x-filament::button type="button" color="gray" wire:click="cancel" size="lg">Cancelar</x-filament::button><x-filament::button type="submit" color="success" size="lg">Levantar chave</x-filament::button></div></form>
-                @elseif ($mode === 'return')
-                    <form wire:submit.prevent="submitReturn" class="space-y-4"><div class="key-control-form-surface rounded-2xl p-6">{{ $this->returnForm }}</div><div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-end dark:border-gray-800"><x-filament::button type="button" color="danger" outlined wire:click="selectCorrect({{ $selectedRoomId }})" size="sm">Corrigir registo</x-filament::button><x-filament::button type="button" color="gray" wire:click="cancel" size="lg">Cancelar</x-filament::button><x-filament::button type="submit" color="success" size="lg">Registar devolução</x-filament::button></div></form>
+                 @if ($mode === 'pickUp')
+                     <form wire:submit.prevent="submitPickUp" class="space-y-4"><div class="key-control-form-surface rounded-2xl p-6">{{ $this->pickUpForm }}</div><div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:flex-wrap sm:justify-end dark:border-gray-800"><x-filament::button type="button" color="gray" wire:click="cancel" size="lg">Cancelar</x-filament::button>@if ($this->rooms->firstWhere('id', $selectedRoomId)?->pendingKeyControls->first())<x-filament::button type="button" color="info" wire:click="openWithFloorKeyFromModal" size="lg">Abrir com chave do piso</x-filament::button>@else<x-filament::button type="submit" color="success" size="lg">Levantar chave</x-filament::button>@endif</div></form>
+                 @elseif ($mode === 'return')
+                     @if ($this->selectedFloorAccess)
+                         <div class="space-y-4"><div class="key-control-form-surface rounded-2xl p-6"><p class="text-sm text-gray-500 dark:text-gray-400">Professor</p><p class="mt-1 text-lg font-bold text-gray-950 dark:text-white">{{ $this->selectedFloorAccess->occupant?->name ?? 'Desconhecido' }}</p></div><div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end dark:border-gray-800"><x-filament::button type="button" color="danger" outlined wire:click="selectCorrect({{ $selectedRoomId }})" size="sm">Corrigir registo</x-filament::button><x-filament::button type="button" color="gray" wire:click="cancel" size="lg">Cancelar</x-filament::button><x-filament::button type="button" color="success" wire:click="submitEndFloorKeyUse" size="lg">Terminar utilização da sala</x-filament::button></div></div>
+                 @else
+                         <form wire:submit.prevent="submitReturn" class="space-y-4"><div class="key-control-form-surface rounded-2xl p-6">{{ $this->returnForm }}</div><div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end dark:border-gray-800"><x-filament::button type="button" color="danger" outlined wire:click="selectCorrect({{ $selectedRoomId }})" size="sm">Corrigir registo</x-filament::button><x-filament::button type="button" color="warning" wire:click="releaseRoom({{ $selectedRoomId }})" size="lg">Chave não devolvida</x-filament::button><x-filament::button type="button" color="gray" wire:click="cancel" size="lg">Cancelar</x-filament::button><x-filament::button type="submit" color="success" size="lg">Registar devolução</x-filament::button></div></form>
+                     @endif
                 @else
                     <form wire:submit.prevent="submitCorrect" class="space-y-4"><div class="key-control-form-surface rounded-2xl p-6">{{ $this->correctForm }}</div><div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end dark:border-gray-800"><x-filament::button type="button" color="gray" wire:click="cancel" size="lg">Cancelar</x-filament::button><x-filament::button type="submit" color="warning" size="lg">Guardar correção</x-filament::button></div></form>
                 @endif

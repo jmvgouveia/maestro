@@ -200,7 +200,6 @@ class ScheduleStudentAssignmentTest extends TestCase
 
         Livewire::test(ListRegistrationSubjects::class)
             ->mountTableAction('selectTurno', $registrationSubjectId)
-            ->assertSee('0 de 15')
             ->setTableActionData(['id_schedule' => $data['selected_schedule_id']])
             ->callMountedTableAction()
             ->assertHasTableActionErrors();

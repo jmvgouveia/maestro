@@ -9,3 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('email-audit:purge')->daily();
+Schedule::command('key-control:daily-closure')
+    ->everyMinute()
+    ->timezone(config('app.timezone'))
+    ->withoutOverlapping();

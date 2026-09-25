@@ -37,8 +37,7 @@ class UserBuildingAuthorizationResource extends Resource
     {
         $user = auth()->user();
 
-        return $user?->isKeyManager()
-            && ($user?->can('manage user room authorizations') ?? false);
+        return $user?->can('manage user room authorizations') ?? false;
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder

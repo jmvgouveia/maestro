@@ -9,14 +9,12 @@ class KeyControlPolicy
 {
     public function viewAny(User $user): bool
     {
-        return ($user->isPorter() || $user->isKeyManager())
-            && $user->checkPermissionTo('view-any key control');
+        return $user->checkPermissionTo('view-any key control');
     }
 
     public function view(User $user, KeyControl $keyControl): bool
     {
-        return ($user->isPorter() || $user->isKeyManager())
-            && $user->checkPermissionTo('view key control');
+        return $user->checkPermissionTo('view key control');
     }
 
     public function create(User $user): bool

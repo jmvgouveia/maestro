@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\KeyControlResource\Pages;
 use App\Models\Building;
 use App\Models\KeyControl;
+use App\Models\KeyControlEvent;
 use App\Models\Room;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -35,9 +36,15 @@ class KeyControlResource extends Resource
 
     protected static ?string $navigationGroup = 'Porteiro';
 
-    protected static ?string $navigationLabel = 'Movimentos';
+    protected static ?string $navigationLabel = 'Relatórios de movimentos';
 
     protected static ?string $navigationIcon = 'heroicon-o-key';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return ! auth()->user()?->isPorter()
+            && (auth()->user()?->can('view-any key control') ?? false);
+    }
 
     public static function getModelLabel(): string
     {
@@ -53,14 +60,13 @@ class KeyControlResource extends Resource
     {
         $user = auth()->user();
 
-        return ($user?->isPorter() || $user?->isKeyManager())
-            && ($user?->can('view-any key control') ?? false);
+        return $user?->can('view-any key control') ?? false;
     }
 
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with(['room.building', 'holder', 'pickedUpBy', 'returnedBy', 'correctedBy', 'originalKeyControl']);
+            ->with(['room.building', 'holder', 'pickedUpBy', 'returnedBy', 'correctedBy', 'originalKeyControl', 'floorKeyAccesses']);
     }
 
     public static function form(Form $form): Form
@@ -138,6 +144,16 @@ class KeyControlResource extends Resource
                     ->label('Levantamento')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
+                TextColumn::make('status')
+                    ->label('Estado')
+                    ->getStateUsing(fn (KeyControl $record): string => $record->statusLabel())
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Devolvida' => 'success',
+                        'Por devolver' => 'warning',
+                        'Sala libertada pelo porteiro', 'Fecho diário automático' => 'danger',
+                        default => 'gray',
+                    }),
                 TextColumn::make('returned_at')
                     ->label('Devolução')
                     ->getStateUsing(fn (KeyControl $record): ?string => $record->is_corrected
@@ -207,7 +223,7 @@ class KeyControlResource extends Resource
                     ->query(function (Builder $query, array $data): Builder {
                         return $query->when($data['value'] ?? null, function (Builder $query) use ($data): Builder {
                             return match ($data['value']) {
-                                'active' => $query->whereNull('returned_at')->where('is_corrected', false),
+                                 'active' => $query->whereNull('returned_at')->whereNull('room_released_at')->where('is_corrected', false),
                                 'returned' => $query->whereNotNull('returned_at')->where('is_corrected', false),
                                 'corrected' => $query->where('is_corrected', true),
                                 default => $query,
@@ -350,6 +366,7 @@ class KeyControlResource extends Resource
         }
 
         \DB::transaction(function () use ($record, $user, $reason, $changes): void {
+            $before = KeyControlEvent::snapshotKeyControl($record);
             $roomId = (int) ($changes['room_id'] ?? $record->room_id);
             $holderType = $changes['holder_type'] ?? $record->holder_type;
             $holderId = (int) ($changes['holder_id'] ?? $record->holder_id);
@@ -402,6 +419,17 @@ class KeyControlResource extends Resource
             $correction->save();
 
             $record->update(['is_corrected' => true]);
+
+            KeyControlEvent::log(
+                $record->originalEventKeyControlId(),
+                KeyControlEvent::CORRECTED,
+                $user->getKey(),
+                [
+                    'reason' => $reason,
+                    'before' => $before,
+                    'after' => KeyControlEvent::snapshotKeyControl($correction),
+                ]
+            );
         });
     }
 
@@ -419,9 +447,11 @@ class KeyControlResource extends Resource
                 'Morada do edifício',
                 'Entregue a',
                 'Tipo',
-                'Levantamento',
-                'Devolução',
-                'Observações levantamento',
+                 'Levantamento',
+                 'Devolução',
+                 'Estado',
+                 'Libertação da sala',
+                 'Observações levantamento',
                 'Observações devolução',
                 'Registado por',
                 'Devolvido por',
@@ -438,6 +468,8 @@ class KeyControlResource extends Resource
                     $record->holderTypeLabel(),
                     $record->picked_up_at?->format('d/m/Y H:i'),
                     $record->returned_at?->format('d/m/Y H:i') ?? '',
+                    $record->statusLabel(),
+                    $record->room_released_at?->format('d/m/Y H:i') ?? '',
                     $record->pick_up_observations ?? '',
                     $record->return_observations ?? '',
                     $record->pickedUpBy?->name,

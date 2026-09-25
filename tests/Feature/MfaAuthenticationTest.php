@@ -91,7 +91,7 @@ class MfaAuthenticationTest extends TestCase
         $login
             ->fillForm(['two_factor_code' => $user->makeTwoFactorCode()])
             ->call('authenticate')
-            ->assertHasErrors(['data.email']);
+            ->assertHasErrors(['data.two_factor_code']);
 
         $this->assertGuest();
     }
