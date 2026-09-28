@@ -34,11 +34,14 @@ class KeyControlResource extends Resource
 {
     protected static ?string $model = KeyControl::class;
 
-    protected static ?string $navigationGroup = 'Porteiro';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Consulta';
 
-    protected static ?string $navigationLabel = 'Relatórios de movimentos';
+    protected static ?string $navigationLabel = 'Movimentos';
 
-    protected static ?string $navigationIcon = 'heroicon-o-key';
+    protected static ?string $navigationIcon = 'heroicon-o-arrows-right-left';
+
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {
@@ -132,30 +135,59 @@ class KeyControlResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('room.name')
                     ->label('Sala')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('room.building.name')
                     ->label('Edifício')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('holder_name')
                     ->label('Entregue a')
                     ->getStateUsing(fn (KeyControl $record): string => $record->holderDisplayName())
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query
                             ->whereHasMorph('holder', [Teacher::class, Student::class], function (Builder $query) use ($search): void {
-                                $query->where('name', 'like', "%{$search}%");
-                            });
-                    }),
+                                 $query->where('name', 'like', "%{$search}%");
+                             });
+                     })
+                    ->toggleable(),
+                TextColumn::make('holder_number')
+                    ->label('Número')
+                    ->getStateUsing(fn (KeyControl $record): ?string => $record->holder?->number)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->whereHasMorph('holder', [Teacher::class, Student::class], function (Builder $query) use ($search): void {
+                            $query->where('number', 'like', "%{$search}%");
+                        });
+                    })
+                    ->placeholder('-')
+                    ->toggleable(),
                 TextColumn::make('holder_type_label')
                     ->label('Tipo')
-                    ->getStateUsing(fn (KeyControl $record): string => $record->holderTypeLabel()),
+                    ->getStateUsing(fn (KeyControl $record): string => $record->holderTypeLabel())
+                    ->toggleable(),
                 TextColumn::make('picked_up_at')
                     ->label('Levantamento')
                     ->dateTime('d/m/Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
+                TextColumn::make('returned_at')
+                    ->label('Devolução')
+                    ->getStateUsing(fn (KeyControl $record): ?string => $record->is_corrected
+                        ? 'Corrigido'
+                        : $record->returned_at?->format('d/m/Y H:i'))
+                    ->badge(fn (KeyControl $record): bool => $record->is_corrected)
+                    ->color(fn (KeyControl $record): string => $record->is_corrected ? 'warning' : 'gray')
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('returned_at', $direction))
+                    ->placeholder('Por devolver')
+                    ->toggleable(),
                 TextColumn::make('status')
                     ->label('Estado')
                     ->getStateUsing(fn (KeyControl $record): string => $record->statusLabel())
@@ -165,29 +197,25 @@ class KeyControlResource extends Resource
                         'Por devolver' => 'warning',
                         'Sala libertada pelo porteiro', 'Fecho diário automático' => 'danger',
                         default => 'gray',
-                    }),
-                TextColumn::make('returned_at')
-                    ->label('Devolução')
-                    ->getStateUsing(fn (KeyControl $record): ?string => $record->is_corrected
-                        ? 'Corrigido'
-                        : $record->returned_at?->format('d/m/Y H:i'))
-                    ->badge(fn (KeyControl $record): bool => $record->is_corrected)
-                    ->color(fn (KeyControl $record): string => $record->is_corrected ? 'warning' : 'gray')
-                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('returned_at', $direction))
-                    ->placeholder('Por devolver'),
+                    })
+                    ->toggleable(),
                 TextColumn::make('pickedUpBy.name')
                     ->label('Registado por')
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->toggleable(),
                 TextColumn::make('correctedBy.name')
                     ->label('Corrigido por')
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->toggleable(),
                 TextColumn::make('correction_reason')
                     ->label('Motivo da correção')
                     ->placeholder('-')
-                    ->wrap(),
+                    ->wrap()
+                    ->toggleable(),
                 TextColumn::make('originalKeyControl.id')
                     ->label('Original')
-                    ->placeholder('-'),
+                    ->placeholder('-')
+                    ->toggleable(),
             ])
             ->defaultSort('picked_up_at', 'desc')
             ->filters([
@@ -458,6 +486,7 @@ class KeyControlResource extends Resource
                 'Sala',
                 'Morada do edifício',
                 'Entregue a',
+                'Número',
                 'Tipo',
                  'Levantamento',
                  'Devolução',
@@ -477,6 +506,7 @@ class KeyControlResource extends Resource
                     $record->room?->name,
                     $record->room?->building?->address,
                     $record->holderDisplayName(),
+                    $record->holder?->number ?? '',
                     $record->holderTypeLabel(),
                     $record->picked_up_at?->format('d/m/Y H:i'),
                     $record->returned_at?->format('d/m/Y H:i') ?? '',

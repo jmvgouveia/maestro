@@ -28,6 +28,17 @@ Quando um subagente encontrar uma decisao que exceda a sua funcao, deve devolver
 
 Nao delegues por defeito.
 
+## Database Safety
+
+- Operacoes que possam apagar, truncar, substituir ou resetar dados sao estritamente proibidas sem autorizacao explicita do utilizador.
+- Isto inclui `RefreshDatabase`, `migrate:fresh`, `db:wipe`, `truncate`, `drop`, resets de volumes e comandos equivalentes.
+- Antes de qualquer teste ou comando que aceda a base de dados, confirma a ligacao efetiva e verifica que o ambiente esta isolado da base partilhada.
+- Se houver qualquer duvida sobre a base ou o efeito do comando, nao executar e pedir confirmacao.
+- Antes de qualquer operacao relacionada com base de dados, alerta explicitamente o utilizador sobre o ambiente, a ligacao e o possivel impacto.
+- Nenhuma operacao que possa alterar uma base de dados de producao ou partilhada pode ser executada sem autorizacao explicita e especifica para essa operacao.
+- Se a configuracao estiver em cache, se o ambiente nao estiver comprovadamente isolado ou se existir qualquer risco de atingir producao, para e nao executes o comando.
+- Testes, seeders, migrations e comandos Artisan que acedam a base de dados devem ser tratados como operacoes sensiveis, mesmo quando parecem apenas de leitura ou de desenvolvimento.
+
 Resolve diretamente tarefas pequenas, locais e bem definidas.
 
 Usa subagentes apenas quando houver ganho claro em especializacao, independencia, reducao de risco ou reducao de trabalho do agente principal.

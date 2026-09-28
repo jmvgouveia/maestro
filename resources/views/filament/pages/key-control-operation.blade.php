@@ -60,9 +60,10 @@
         @else
             <div class="key-control-grid">
                 @foreach ($this->rooms as $room)
-                     @php($active = $this->activeKeyControlFor($room))
-                     @php($floorAccess = $this->activeFloorKeyAccessFor($room))
-                     @php($pending = $room->pendingKeyControls->first())
+                      @php($active = $this->activeKeyControlFor($room))
+                      @php($floorAccess = $this->activeFloorKeyAccessFor($room))
+                      @php($pending = $room->pendingKeyControls->first())
+                      @php($studentKeyAlert = $this->hasStudentKeyAlert($room, $active, $floorAccess))
                     <article
                          class="porter-room-card porter-room-card-action relative {{ $active || $floorAccess ? 'is-occupied' : 'is-available' }}"
                         role="button"
@@ -102,7 +103,8 @@
                                  <div class="porter-available-copy"><span class="porter-key-avatar"><x-heroicon-o-key class="h-6 w-6" /></span><strong>Chave disponível</strong></div>
                              @endif
                           </div>
-                           @if ($floorAccess)<span title="Acesso com chave do funcionário de piso" aria-label="Acesso com chave do funcionário de piso" class="floor-key-icon"><x-heroicon-o-key class="h-4 w-4" /></span>@endif
+                            @if ($floorAccess)<span title="Acesso com chave do funcionário de piso" aria-label="Acesso com chave do funcionário de piso" class="floor-key-icon"><x-heroicon-o-key class="h-4 w-4" /></span>@endif
+                            @if ($studentKeyAlert)<span title="Chave de aluno ultrapassou o limite configurado" aria-label="Chave de aluno ultrapassou o limite configurado" class="student-key-alert {{ $floorAccess ? 'has-floor-key' : '' }}"><span aria-hidden="true"></span></span>@endif
                       </article>
                 @endforeach
             </div>
@@ -141,6 +143,11 @@
         .porter-filter-select select { width: 100%; color: #172033; background: transparent; border: 0; outline: 0; font-size: .85rem; }
          .porter-room-card { position: relative; display: flex; min-height: 10.75rem; flex-direction: column; padding: .95rem 1rem; background: white; border: 1px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: .85rem; box-shadow: 0 2px 5px rgb(15 23 42 / 4%); transition: box-shadow 150ms ease, transform 150ms ease; }
          .floor-key-icon { position: absolute; right: .75rem; bottom: .75rem; display: inline-flex; color: #2563eb; }
+         .student-key-alert { position: absolute; right: .75rem; bottom: .7rem; display: grid; place-items: center; width: 1.25rem; height: 1.25rem; color: #fff; background: #dc2626; border: 2px solid #fff; border-radius: 999px; box-shadow: 0 1px 3px rgb(15 23 42 / 25%); }
+         .student-key-alert.has-floor-key { right: 2.35rem; }
+         .student-key-alert > span { width: .42rem; height: .42rem; background: currentColor; border-radius: 999px; box-shadow: 0 0 0 0 rgb(220 38 38 / 65%); animation: student-key-alert-pulse 1.4s infinite; }
+         @keyframes student-key-alert-pulse { 0% { box-shadow: 0 0 0 0 rgb(220 38 38 / 65%); } 70% { box-shadow: 0 0 0 .65rem rgb(220 38 38 / 0%); } 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0%); } }
+         @media (prefers-reduced-motion: reduce) { .student-key-alert > span { animation: none; } }
         .porter-room-card:hover { box-shadow: 0 10px 22px rgb(15 23 42 / 8%); transform: translateY(-1px); }
         .porter-room-card-action { cursor: pointer; }
         .porter-room-card-action:focus-visible { outline: 3px solid #ffbf00; outline-offset: 3px; }

@@ -23,10 +23,12 @@ class RoomFeatureSettings extends Page implements HasTable
 
     protected static string $view = 'filament.pages.room-feature-settings';
     protected static ?string $slug = 'caracteristicas-salas';
-    protected static ?string $navigationGroup = 'Porteiro';
-    protected static ?string $navigationLabel = 'Características de salas';
-    protected static ?string $title = 'Características de salas';
-    protected static ?int $navigationSort = 5;
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Definições';
+    protected static ?string $navigationLabel = 'Características';
+    protected static ?string $navigationIcon = 'heroicon-o-adjustments-horizontal';
+    protected static ?string $title = 'Características';
+    protected static ?int $navigationSort = 1;
 
     public static function canAccess(): bool
     {

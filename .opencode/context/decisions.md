@@ -37,6 +37,32 @@ DEC-XXX, when applicable.
 
 ## Active Decisions
 
+### DEC-003 — Consolidar cadastro e configuração de salas
+
+Date: 2026-09-28
+
+Status: Active
+
+Decision:
+
+Usar `RoomResource` como fonte única de salas e integrar na sua tabela a
+configuração já existente de mapa de ocupação e características. Manter
+`KeyControlRoomSettings` acessível pela URL e permissões existentes, mas sem
+item próprio na navegação.
+
+Reason:
+
+Evitar duas entradas administrativas para a mesma entidade `Room` e tornar
+clara a relação entre o cadastro da sala e as suas configurações.
+
+Consequences:
+
+- Não alterar migrations, models, relações ou base de dados.
+- Manter as ações de configuração protegidas por `manage room occupancy settings`.
+- A navegação usa um grupo Filament nativo com `navigationParentItem`, sem sidebar Blade customizada.
+
+---
+
 ### DEC-001 — Adiar distinção de inscrições duplicadas no horário
 
 Date: 2026-09-03

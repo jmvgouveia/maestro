@@ -66,7 +66,7 @@ class ExampleTest extends TestCase
             'Administração',
             'Aluno',
             'Gestão Pedagógica',
-            'Porteiro',
+            'GESTÃO DE CHAVES',
         ], $groups);
     }
 

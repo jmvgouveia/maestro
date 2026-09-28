@@ -10,10 +10,12 @@ class RoomOccupancyMap extends Page
 {
     protected static string $view = 'filament.pages.room-occupancy-map';
     protected static ?string $slug = 'mapa-ocupacao';
-    protected static ?string $navigationGroup = 'Salas';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Operação';
     protected static ?string $navigationLabel = 'Mapa de ocupação';
+    protected static ?string $navigationIcon = 'heroicon-o-map';
     protected static ?string $title = 'Mapa de ocupação';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     public static function canAccess(): bool
     {

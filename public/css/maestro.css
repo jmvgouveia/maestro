@@ -187,13 +187,13 @@
     background: #f1f5f9;
 }
 
-.fi-sidebar-item.fi-active .fi-sidebar-item-button {
+.fi-sidebar-item.fi-active > .fi-sidebar-item-button {
     color: var(--maestro-blue);
     background: var(--maestro-selected);
 }
 
 /* Indicador dourado do item ativo */
-.fi-sidebar-item.fi-active .fi-sidebar-item-button::before {
+.fi-sidebar-item.fi-active > .fi-sidebar-item-button::before {
     position: absolute;
     inset-block: 0.375rem;
     inset-inline-start: -0.5rem;
@@ -204,10 +204,22 @@
 }
 
 /* Texto e ícone do item ativo */
-.fi-sidebar-item.fi-active .fi-sidebar-item-icon,
-.fi-sidebar-item.fi-active .fi-sidebar-item-label {
+.fi-sidebar-item.fi-active > .fi-sidebar-item-button .fi-sidebar-item-icon,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-button .fi-sidebar-item-label {
     color: var(--maestro-blue);
     font-weight: 600;
+}
+
+/* Os filhos mantêm o fundo neutro; apenas o destino atual fica destacado. */
+.fi-sidebar-sub-group-items .fi-sidebar-item:not(.fi-active) .fi-sidebar-item-button {
+    background: transparent;
+    color: var(--maestro-text);
+}
+
+.fi-sidebar-sub-group-items .fi-sidebar-item:not(.fi-active) .fi-sidebar-item-icon,
+.fi-sidebar-sub-group-items .fi-sidebar-item:not(.fi-active) .fi-sidebar-item-label {
+    color: var(--maestro-text);
+    font-weight: 500;
 }
 
 /* Barra superior */

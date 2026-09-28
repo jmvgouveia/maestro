@@ -24,12 +24,16 @@ class KeyControlRoomSettings extends Page implements HasTable
 {
     use InteractsWithTable;
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string $view = 'filament.pages.key-control-room-settings';
     protected static ?string $slug = 'administracao-salas-porteiro';
-    protected static ?string $navigationGroup = 'Porteiro';
-    protected static ?string $navigationLabel = 'Administração de salas';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Definições';
+    protected static ?string $navigationLabel = 'Sala';
+    protected static ?string $navigationIcon = 'heroicon-o-building-office';
     protected static ?string $title = 'Administração de salas';
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     public static function canAccess(): bool
     {

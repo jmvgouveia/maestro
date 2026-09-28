@@ -23,9 +23,14 @@ class KeyControlSettings extends Page implements HasForms
 
     protected static ?string $slug = 'definicoes-controlo-chaves';
 
-    protected static ?string $navigationGroup = 'Porteiro';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Definições';
 
-    protected static ?string $navigationLabel = 'Definições de chaves';
+    protected static ?string $navigationLabel = 'Relatórios';
+
+    protected static ?string $navigationIcon = 'heroicon-o-key';
+
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $title = 'Definições do controlo de chaves';
 
@@ -50,6 +55,7 @@ class KeyControlSettings extends Page implements HasForms
 
         $this->form->fill([
             'daily_closure_time' => KeyControlSetting::value('daily_closure_time', '23:59'),
+            'student_key_alert_after_minutes' => KeyControlSetting::value('student_key_alert_after_minutes', '120'),
             'recipients' => $recipients,
         ]);
     }
@@ -62,6 +68,12 @@ class KeyControlSettings extends Page implements HasForms
                 ->type('time')
                 ->required()
                 ->rules(['date_format:H:i']),
+            TextInput::make('student_key_alert_after_minutes')
+                ->label('Alerta de chave de aluno (minutos)')
+                ->numeric()
+                ->minValue(1)
+                ->required()
+                ->helperText('Limite global para alertar no cartão de operação. O valor por defeito é 120 minutos.'),
             Repeater::make('recipients')
                 ->label('Destinatários de relatórios')
                 ->schema([
@@ -113,6 +125,7 @@ class KeyControlSettings extends Page implements HasForms
 
         if (auth()->user()?->can('manage key control settings')) {
             KeyControlSetting::put('daily_closure_time', $data['daily_closure_time']);
+            KeyControlSetting::put('student_key_alert_after_minutes', (string) $data['student_key_alert_after_minutes']);
         }
 
         if (auth()->user()?->can('manage key control report recipients')) {

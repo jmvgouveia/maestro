@@ -12,11 +12,15 @@ class Room extends Model
         'description',
         'id_building',
         'show_on_occupancy_map',
+        'student_key_alert_after_minutes',
     ];
 
     protected function casts(): array
     {
-        return ['show_on_occupancy_map' => 'boolean'];
+        return [
+            'show_on_occupancy_map' => 'boolean',
+            'student_key_alert_after_minutes' => 'integer',
+        ];
     }
 
     public function building(): BelongsTo

@@ -5,8 +5,11 @@ namespace App\Providers\Filament;
 use Althinect\FilamentSpatieRolesPermissions\FilamentSpatieRolesPermissionsPlugin;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
+use App\Filament\Pages\KeyControlOperation;
+use App\Filament\Pages\KeyControlSettings;
 use App\Filament\Pages\MfaSetup;
 use App\Filament\Pages\MyAccount;
+use App\Filament\Resources\KeyControlResource;
 use App\Filament\Widgets\BuildingsOverview;
 use App\Filament\Widgets\MfaGracePeriodNotice;
 use App\Filament\Widgets\ScheduleWindowsWidget;
@@ -26,6 +29,7 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Assets\Css;
@@ -148,7 +152,8 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Recursos'),
                 NavigationGroup::make()
-                    ->label('Porteiro'),
+                    ->label('GESTÃO DE CHAVES')
+                    ->collapsible(false),
                 NavigationGroup::make()
                     ->label('Administração')
                     ->collapsible(),
@@ -158,6 +163,38 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Ajuda')
                     ->collapsible(),
+            ])
+            ->navigationItems([
+                NavigationItem::make('Operação')
+                    ->group('GESTÃO DE CHAVES')
+                    ->icon('heroicon-o-key')
+                    ->url(fn (): string => KeyControlOperation::getUrl())
+                    ->isActiveWhen(fn (): bool => request()->routeIs(
+                        'filament.admin.pages.operacao-chaves',
+                        'filament.admin.pages.devolucao-chaves-pendentes',
+                        'filament.admin.pages.mapa-ocupacao',
+                    ))
+                    ->sort(1),
+                NavigationItem::make('Consulta')
+                    ->group('GESTÃO DE CHAVES')
+                    ->icon('heroicon-o-magnifying-glass')
+                    ->isActiveWhen(fn (): bool => request()->routeIs(
+                        'filament.admin.pages.historico-chaves',
+                        'filament.admin.resources.key-controls.*',
+                    ))
+                    ->url(fn (): string => KeyControlResource::getUrl())
+                    ->sort(2),
+                NavigationItem::make('Definições')
+                    ->group('GESTÃO DE CHAVES')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->url(fn (): string => KeyControlSettings::getUrl())
+                    ->isActiveWhen(fn (): bool => request()->routeIs(
+                        'filament.admin.pages.definicoes-controlo-chaves',
+                        'filament.admin.pages.caracteristicas-salas',
+                        'filament.admin.resources.rooms.*',
+                        'filament.admin.resources.user-building-authorizations.*',
+                    ))
+                    ->sort(3),
             ])
             ->databaseNotifications()
             ->databaseNotificationsPolling('5s');

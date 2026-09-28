@@ -10,21 +10,25 @@ use Filament\Facades\Filament;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Url;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class KeyControlAudit extends Page
 {
     protected static string $view = 'filament.pages.key-control-audit';
     protected static ?string $slug = 'historico-chaves';
-    protected static ?string $navigationGroup = 'Porteiro';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Consulta';
     protected static ?string $navigationLabel = 'Histórico';
+    protected static ?string $navigationIcon = 'heroicon-o-clock';
     protected static ?string $title = 'Histórico de movimentos de chaves';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 2;
 
     public ?string $dateFrom = null;
     public ?string $dateUntil = null;
     public ?string $eventType = null;
     public ?int $roomId = null;
+    #[Url]
     public ?string $person = null;
 
     public static function canAccess(): bool
@@ -105,7 +109,7 @@ class KeyControlAudit extends Page
 
     public static function eventOptions(): array
     {
-        return [KeyControlEvent::KEY_PICKED_UP => 'Levantamento', KeyControlEvent::KEY_RETURNED => 'Devolução', KeyControlEvent::ROOM_RELEASED => 'Chave não devolvida', KeyControlEvent::FLOOR_KEY_OPENED => 'Abertura com chave de piso', KeyControlEvent::FLOOR_USE_ENDED => 'Fim de utilização', KeyControlEvent::CORRECTED => 'Correção'];
+        return [KeyControlEvent::KEY_PICKED_UP => 'Levantamento', KeyControlEvent::KEY_RETURNED => 'Devolução', KeyControlEvent::STUDENT_KEY_ALERT => 'Tempo de devolução ultrapassado', KeyControlEvent::ROOM_RELEASED => 'Chave não devolvida', KeyControlEvent::FLOOR_KEY_OPENED => 'Abertura com chave de piso', KeyControlEvent::FLOOR_USE_ENDED => 'Fim de utilização', KeyControlEvent::CORRECTED => 'Correção'];
     }
 
     public static function eventLabel(string $event, ?array $data = null): string
@@ -119,7 +123,7 @@ class KeyControlAudit extends Page
 
     public static function eventColor(string $event): string
     {
-        return match ($event) { KeyControlEvent::KEY_RETURNED, KeyControlEvent::FLOOR_USE_ENDED => 'success', KeyControlEvent::ROOM_RELEASED => 'danger', KeyControlEvent::CORRECTED => 'warning', default => 'info' };
+        return match ($event) { KeyControlEvent::KEY_RETURNED, KeyControlEvent::FLOOR_USE_ENDED => 'success', KeyControlEvent::STUDENT_KEY_ALERT, KeyControlEvent::ROOM_RELEASED => 'danger', KeyControlEvent::CORRECTED => 'warning', default => 'info' };
     }
 
     private function canSeeAllRooms(): bool

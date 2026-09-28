@@ -18,10 +18,11 @@ class UserBuildingAuthorizationResource extends Resource
 {
     protected static ?string $model = UserBuildingAuthorization::class;
 
-    protected static ?string $navigationGroup = 'Porteiro';
-    protected static ?string $navigationLabel = 'Autorizações de Edifícios';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Definições';
+    protected static ?string $navigationLabel = 'Porteiro';
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 2;
 
     public static function getModelLabel(): string
     {

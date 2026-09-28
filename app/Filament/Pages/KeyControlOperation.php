@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\KeyControl;
 use App\Models\KeyControlFloorKeyAccess;
 use App\Models\KeyControlEvent;
+use App\Models\KeyControlSetting;
 use App\Models\Building;
 use App\Models\Room;
 use App\Models\Student;
@@ -30,9 +31,10 @@ class KeyControlOperation extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-key';
 
-    protected static ?string $navigationGroup = 'Porteiro';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Operação';
 
-    protected static ?string $navigationLabel = 'Salas';
+    protected static ?string $navigationLabel = 'Controlo de Chaves';
 
     protected static ?int $navigationSort = 1;
 
@@ -176,6 +178,43 @@ class KeyControlOperation extends Page implements HasForms
     public function activeFloorKeyAccessFor(Room $room): ?KeyControlFloorKeyAccess
     {
         return $room->activeFloorKeyAccess;
+    }
+
+    public function getStudentKeyAlertAfterMinutesProperty(): int
+    {
+        $configured = (int) KeyControlSetting::value('student_key_alert_after_minutes', '120');
+
+        return max(1, $configured ?: 120);
+    }
+
+    public function hasStudentKeyAlert(
+        Room $room,
+        ?KeyControl $keyControl,
+        ?KeyControlFloorKeyAccess $floorAccess,
+    ): bool {
+        $limit = $room->student_key_alert_after_minutes ?? $this->studentKeyAlertAfterMinutes;
+
+        if ($keyControl?->isActive()
+            && $keyControl->holder_type === Student::class
+            && $keyControl->picked_up_at?->lte(now()->subMinutes($limit))) {
+            KeyControlEvent::recordStudentAlert($keyControl, $limit);
+
+            return true;
+        }
+
+        if ($floorAccess?->isActive()
+            && $floorAccess->occupant_type === Student::class
+            && $floorAccess->accessed_at?->lte(now()->subMinutes($limit))) {
+            $keyControl = $floorAccess->keyControl;
+
+            if ($keyControl !== null) {
+                KeyControlEvent::recordStudentAlert($keyControl, $limit, $floorAccess);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     public function getSelectedFloorAccessProperty(): ?KeyControlFloorKeyAccess
@@ -622,6 +661,8 @@ class KeyControlOperation extends Page implements HasForms
                     'return_observations' => $observations,
                     'returned_by' => $user->getKey(),
                 ]);
+
+                KeyControlEvent::completeStudentAlert($active, null, $active->returned_at);
 
                 KeyControlEvent::log(
                     $active->originalEventKeyControlId(),

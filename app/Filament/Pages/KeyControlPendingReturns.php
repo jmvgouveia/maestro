@@ -24,9 +24,12 @@ class KeyControlPendingReturns extends Page implements HasForms
 
     protected static ?string $slug = 'devolucao-chaves-pendentes';
 
-    protected static ?string $navigationGroup = 'Porteiro';
+    protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
+    protected static ?string $navigationParentItem = 'Operação';
 
     protected static ?string $navigationLabel = 'Devoluções pendentes';
+
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-path';
 
     protected static ?string $title = 'Devolução de chaves pendentes';
 
@@ -129,6 +132,8 @@ class KeyControlPendingReturns extends Page implements HasForms
                 'returned_by' => $user->getKey(),
                 'return_observations' => $keyControl->return_observations ?: ($observations ?: 'Devolução registada na página de pendentes.'),
             ])->save();
+
+            KeyControlEvent::completeStudentAlert($keyControl, null, $keyControl->returned_at);
 
             KeyControlEvent::log(
                 $keyControl->originalEventKeyControlId(),

@@ -18,6 +18,8 @@ class KeyControlEvent extends Model
 
     public const KEY_RETURNED = 'key_returned';
 
+    public const STUDENT_KEY_ALERT = 'student_key_alert';
+
     public const CORRECTED = 'corrected';
 
     protected $fillable = [
@@ -67,6 +69,68 @@ class KeyControlEvent extends Model
             'occurred_at' => $occurredAt ?? now(),
             'performed_by' => $performedBy,
             'data' => $data,
+        ]);
+    }
+
+    public static function recordStudentAlert(KeyControl $keyControl, int $limit, ?KeyControlFloorKeyAccess $floorAccess = null): void
+    {
+        $student = $floorAccess?->occupant_type === Student::class
+            ? Student::find($floorAccess->occupant_id)
+            : $keyControl->holder;
+
+        if (! $student instanceof Student) {
+            return;
+        }
+
+        $query = self::query()
+            ->where('key_control_id', $keyControl->originalEventKeyControlId())
+            ->where('event_type', self::STUDENT_KEY_ALERT);
+
+        $floorAccess === null
+            ? $query->whereNull('floor_key_access_id')
+            : $query->where('floor_key_access_id', $floorAccess->getKey());
+
+        if ($query->exists()) {
+            return;
+        }
+
+        self::log(
+            $keyControl->originalEventKeyControlId(),
+            self::STUDENT_KEY_ALERT,
+            null,
+            [
+                'student_id' => $student->getKey(),
+                'student_number' => $student->number,
+                'student_name' => $student->name,
+                'limit_minutes' => $limit,
+                'started_at' => ($floorAccess?->accessed_at ?? $keyControl->picked_up_at)?->toDateTimeString(),
+            ],
+            $floorAccess?->getKey(),
+            now(),
+        );
+    }
+
+    public static function completeStudentAlert(KeyControl $keyControl, ?KeyControlFloorKeyAccess $floorAccess = null, ?Carbon $completedAt = null): void
+    {
+        $query = self::query()
+            ->where('key_control_id', $keyControl->originalEventKeyControlId())
+            ->where('event_type', self::STUDENT_KEY_ALERT);
+
+        $floorAccess === null
+            ? $query->whereNull('floor_key_access_id')
+            : $query->where('floor_key_access_id', $floorAccess->getKey());
+
+        $alert = $query->latest('occurred_at')->first();
+
+        if ($alert === null || $completedAt === null) {
+            return;
+        }
+
+        $alert->update([
+            'data' => array_merge($alert->data ?? [], [
+                'completed_at' => $completedAt->toDateTimeString(),
+                'delay_after_alert_minutes' => max(0, $alert->occurred_at->diffInMinutes($completedAt)),
+            ]),
         ]);
     }
 

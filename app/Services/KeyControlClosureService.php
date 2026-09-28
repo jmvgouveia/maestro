@@ -100,6 +100,8 @@ class KeyControlClosureService
                 'ended_by' => $porter->getKey(),
             ])->save();
 
+            KeyControlEvent::completeStudentAlert($record->keyControl, $record, $record->ended_at);
+
             KeyControlEvent::log(
                 $record->keyControl?->originalEventKeyControlId() ?? $record->key_control_id,
                 KeyControlEvent::FLOOR_USE_ENDED,
