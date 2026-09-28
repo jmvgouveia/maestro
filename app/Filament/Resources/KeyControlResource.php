@@ -70,7 +70,7 @@ class KeyControlResource extends Resource
         $query = parent::getEloquentQuery()
             ->with(['room.building', 'holder', 'pickedUpBy', 'returnedBy', 'correctedBy', 'originalKeyControl', 'floorKeyAccesses']);
 
-        if (auth()->user()?->isPorter()) {
+        if (auth()->user()?->isPorter() && ! auth()->user()?->can('view-any key control')) {
             $userId = auth()->id();
 
             $query->where(function (Builder $query) use ($userId): void {

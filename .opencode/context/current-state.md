@@ -83,6 +83,7 @@
 - A pesquisa de aluno foi movida para o cabeçalho da lista de detalhe, no lado direito. O selector de linhas foi movido para o rodapé, acompanhado da contagem e paginação; filtros de data/sala permanecem no topo. A mudança de filtros reinicia a página de detalhe.
 - Os nomes dos alunos no ranking e no detalhe passaram a ser links para `Histórico`, com o filtro do aluno já preenchido via query string (`person`). Filtro URL e consulta foram validados localmente; para o aluno de teste retornaram 8 eventos.
 - No `Histórico`, o evento `student_key_alert` passou a aparecer como `Tempo de devolução ultrapassado` e usa a cor de alerta vermelha (`danger`). Validação do label/cor concluída.
+- Corrigido o âmbito de `KeyControlResource`: utilizadores com role `Porteiro` mas também com `view-any key control` (Gestão/Admin) deixam de ser filtrados pelos próprios registos; apenas o porteiro operacional sem essa permissão vê os seus movimentos.
 
 ## Next Safe Action
 
