@@ -84,6 +84,8 @@
 - Os nomes dos alunos no ranking e no detalhe passaram a ser links para `Histórico`, com o filtro do aluno já preenchido via query string (`person`). Filtro URL e consulta foram validados localmente; para o aluno de teste retornaram 8 eventos.
 - No `Histórico`, o evento `student_key_alert` passou a aparecer como `Tempo de devolução ultrapassado` e usa a cor de alerta vermelha (`danger`). Validação do label/cor concluída.
 - Corrigido o âmbito de `KeyControlResource`: utilizadores com role `Porteiro` mas também com `view-any key control` (Gestão/Admin) deixam de ser filtrados pelos próprios registos; apenas o porteiro operacional sem essa permissão vê os seus movimentos.
+- Refinada a regra após validação em produção: a visibilidade global passa a depender explicitamente das roles `Super Admin`, `Gestão de Chaves`, `Gestão de porteiro` e `Admin Porteiro`, não da permissão `view-any`. Um utilizador com role operacional `Porteiro` vê apenas os próprios registos mesmo que tenha essa permissão atribuída.
+- O item de navegação `Definições` passou a estar visível apenas para `Super Admin`, `Gestão de Chaves`, `Gestão de porteiro` e `Admin Porteiro`; o `Porteiro` não vê o menu e as páginas continuam protegidas por `canAccess()`.
 
 ## Next Safe Action
 

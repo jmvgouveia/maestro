@@ -187,6 +187,12 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Definições')
                     ->group('GESTÃO DE CHAVES')
                     ->icon('heroicon-o-cog-6-tooth')
+                    ->visible(fn (): bool => auth()->user()?->hasAnyRole([
+                        'Super Admin',
+                        'Gestão de Chaves',
+                        'Gestão de porteiro',
+                        'Admin Porteiro',
+                    ]) ?? false)
                     ->url(fn (): string => KeyControlSettings::getUrl())
                     ->isActiveWhen(fn (): bool => request()->routeIs(
                         'filament.admin.pages.definicoes-controlo-chaves',
