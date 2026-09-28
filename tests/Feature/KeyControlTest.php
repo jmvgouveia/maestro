@@ -115,6 +115,37 @@ class KeyControlTest extends TestCase
         $this->assertFalse(KeyControlResource::canViewAny());
     }
 
+    public function test_porter_only_sees_own_movements_in_key_control_report(): void
+    {
+        $porter = $this->porter();
+        $otherPorter = $this->porter();
+        $teacher = $this->teacher();
+        $room = $this->room();
+
+        $ownMovement = KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => now(),
+            'picked_up_by' => $porter->id,
+        ]);
+
+        $otherMovement = KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => now()->subMinute(),
+            'picked_up_by' => $otherPorter->id,
+        ]);
+
+        $this->actingAs($porter);
+
+        $movementIds = KeyControlResource::getEloquentQuery()->pluck('id')->all();
+
+        $this->assertContains($ownMovement->id, $movementIds);
+        $this->assertNotContains($otherMovement->id, $movementIds);
+    }
+
     public function test_key_manager_can_render_key_register_with_filters(): void
     {
         $manager = $this->keyManager();

@@ -42,8 +42,7 @@ class KeyControlResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return ! auth()->user()?->isPorter()
-            && (auth()->user()?->can('view-any key control') ?? false);
+        return auth()->user()?->can('view-any key control') ?? false;
     }
 
     public static function getModelLabel(): string
@@ -65,8 +64,21 @@ class KeyControlResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->with(['room.building', 'holder', 'pickedUpBy', 'returnedBy', 'correctedBy', 'originalKeyControl', 'floorKeyAccesses']);
+
+        if (auth()->user()?->isPorter()) {
+            $userId = auth()->id();
+
+            $query->where(function (Builder $query) use ($userId): void {
+                $query->where('picked_up_by', $userId)
+                    ->orWhere('returned_by', $userId)
+                    ->orWhere('room_released_by', $userId)
+                    ->orWhere('corrected_by', $userId);
+            });
+        }
+
+        return $query;
     }
 
     public static function form(Form $form): Form

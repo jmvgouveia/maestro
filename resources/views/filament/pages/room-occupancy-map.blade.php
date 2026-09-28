@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <div class="occupancy-page" wire:poll.30s="refreshOccupancy">
+    <div class="occupancy-page" wire:poll.15s="refreshOccupancy">
         <header class="occupancy-header">
             <div class="occupancy-heading">
                 <p class="occupancy-eyebrow">Consulta em tempo real</p>
