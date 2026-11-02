@@ -182,11 +182,6 @@ class KeyControlTest extends TestCase
             ]),
             KeyControlEvent::create([
                 'key_control_id' => $keyControl->id,
-                'event_type' => KeyControlEvent::FLOOR_KEY_OPENED,
-                'occurred_at' => Carbon::parse('2026-09-28 10:05:00'),
-            ]),
-            KeyControlEvent::create([
-                'key_control_id' => $keyControl->id,
                 'event_type' => KeyControlEvent::KEY_RETURNED,
                 'occurred_at' => Carbon::parse('2026-09-28 11:30:00'),
             ]),
@@ -197,6 +192,51 @@ class KeyControlTest extends TestCase
         });
 
         $this->assertSame('1h 30m', (new KeyControlAudit)->personDuration($events));
+    }
+
+    public function test_key_audit_does_not_end_floor_key_use_when_the_original_key_is_returned(): void
+    {
+        $porter = $this->porter();
+        $room = $this->room();
+        $teacher = $this->teacher();
+        $keyControl = KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => Carbon::parse('2026-09-28 10:00:00'),
+            'returned_at' => Carbon::parse('2026-09-28 11:00:00'),
+            'picked_up_by' => $porter->id,
+            'returned_by' => $porter->id,
+        ]);
+
+        $events = collect([
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::KEY_PICKED_UP,
+                'occurred_at' => Carbon::parse('2026-09-28 10:00:00'),
+            ]),
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::FLOOR_KEY_OPENED,
+                'occurred_at' => Carbon::parse('2026-09-28 10:35:00'),
+            ]),
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::KEY_RETURNED,
+                'occurred_at' => Carbon::parse('2026-09-28 11:00:00'),
+            ]),
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::FLOOR_USE_ENDED,
+                'occurred_at' => Carbon::parse('2026-09-28 12:00:00'),
+            ]),
+        ]);
+
+        $events->each(function (KeyControlEvent $event) use ($keyControl): void {
+            $event->setRelation('keyControl', $keyControl);
+        });
+
+        $this->assertSame('2h 25m', (new KeyControlAudit)->personDuration($events));
     }
 
     public function test_key_audit_defaults_to_today_and_resets_to_today(): void

@@ -91,6 +91,7 @@
 - `Operação` exige `operate key control`; `Mapa de ocupação` foi movido para `Consulta`; `Definições` exige `manage key control administration`. A migration ainda não foi executada em nenhuma BD de produção. O teste focado `tests/Feature/KeyControlTest.php` passou com 16 testes e 67 assertions numa base SQLite de teste isolada via DDEV.
 - Corrigido o formulário de professores: Recursos Humanos pode preencher o email na criação, mas continua impedido de o alterar na edição.
 - O `Histórico` passa a abrir por defeito apenas com os movimentos do dia atual; alterar as datas permite consultar outros períodos e `Limpar` repõe o dia atual.
+- Corrigido o cálculo de duração quando uma chave original é devolvida enquanto a sala continua aberta com chave de piso: `KEY_RETURNED` já não encerra um intervalo `FLOOR_KEY_OPENED`; o fecho depende de `FLOOR_USE_ENDED`.
 
 ## Next Safe Action
 

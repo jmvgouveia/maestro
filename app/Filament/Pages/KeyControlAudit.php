@@ -176,24 +176,43 @@ class KeyControlAudit extends Page
                 $keyControl = $controlEvents->first()->keyControl;
                 $orderedEvents = $controlEvents->sortBy('occurred_at')->values();
                 $minutes = 0;
-                $start = null;
+                $starts = [
+                    'key' => null,
+                    'floor' => null,
+                ];
                 $hasDurationEvent = false;
 
                 foreach ($orderedEvents as $event) {
-                    if (in_array($event->event_type, [KeyControlEvent::KEY_PICKED_UP, KeyControlEvent::FLOOR_KEY_OPENED], true)) {
+                    if ($event->event_type === KeyControlEvent::KEY_PICKED_UP) {
                         $hasDurationEvent = true;
-                        $start ??= $event->occurred_at;
+                        $starts['key'] ??= $event->occurred_at;
 
                         continue;
                     }
 
-                    if ($start !== null && in_array($event->event_type, [KeyControlEvent::KEY_RETURNED, KeyControlEvent::FLOOR_USE_ENDED], true)) {
-                        $minutes += (int) $start->diffInMinutes($event->occurred_at);
-                        $start = null;
+                    if ($event->event_type === KeyControlEvent::KEY_RETURNED) {
+                        if ($starts['key'] !== null) {
+                            $minutes += (int) $starts['key']->diffInMinutes($event->occurred_at);
+                            $starts['key'] = null;
+                        }
+
+                        continue;
+                    }
+
+                    if ($event->event_type === KeyControlEvent::FLOOR_KEY_OPENED) {
+                        $hasDurationEvent = true;
+                        $starts['floor'] ??= $event->occurred_at;
+
+                        continue;
+                    }
+
+                    if ($event->event_type === KeyControlEvent::FLOOR_USE_ENDED && $starts['floor'] !== null) {
+                        $minutes += (int) $starts['floor']->diffInMinutes($event->occurred_at);
+                        $starts['floor'] = null;
                     }
                 }
 
-                if ($start !== null) {
+                foreach (array_filter($starts) as $start) {
                     $end = now();
 
                     if ($this->dateUntil !== null) {
