@@ -32,6 +32,13 @@ class KeyControlAudit extends Page
     #[Url]
     public ?string $person = null;
 
+    public function mount(): void
+    {
+        $today = now()->toDateString();
+        $this->dateFrom = $today;
+        $this->dateUntil = $today;
+    }
+
     public static function canAccess(): bool
     {
         return auth()->user()?->can('view key control history') ?? false;
@@ -89,7 +96,10 @@ class KeyControlAudit extends Page
 
     public function resetFilters(): void
     {
-        $this->dateFrom = $this->dateUntil = $this->eventType = $this->person = null;
+        $today = now()->toDateString();
+        $this->dateFrom = $today;
+        $this->dateUntil = $today;
+        $this->eventType = $this->person = null;
         $this->roomId = null;
     }
 

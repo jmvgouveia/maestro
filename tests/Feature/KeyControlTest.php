@@ -199,6 +199,22 @@ class KeyControlTest extends TestCase
         $this->assertSame('1h 30m', (new KeyControlAudit)->personDuration($events));
     }
 
+    public function test_key_audit_defaults_to_today_and_resets_to_today(): void
+    {
+        $audit = new KeyControlAudit;
+        $audit->mount();
+
+        $this->assertSame(now()->toDateString(), $audit->dateFrom);
+        $this->assertSame(now()->toDateString(), $audit->dateUntil);
+
+        $audit->dateFrom = '2020-01-01';
+        $audit->dateUntil = '2020-01-02';
+        $audit->resetFilters();
+
+        $this->assertSame(now()->toDateString(), $audit->dateFrom);
+        $this->assertSame(now()->toDateString(), $audit->dateUntil);
+    }
+
     public function test_porter_only_sees_authorized_rooms(): void
     {
         $porter = $this->porter();

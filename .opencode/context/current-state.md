@@ -90,6 +90,7 @@
 - Matriz uniformizada: `Porteiro` fica com operação e devoluções; `Gestão de Chaves` fica com consulta/histórico/exportação/mapa; `Admin Porteiro` acrescenta configurações, correções e administração. A migration `2026_09_28_130000_unify_key_control_roles` transfere utilizadores da role legada para `Gestão de Chaves`, regista a transferência para rollback e usa grants aditivos.
 - `Operação` exige `operate key control`; `Mapa de ocupação` foi movido para `Consulta`; `Definições` exige `manage key control administration`. A migration ainda não foi executada em nenhuma BD de produção. O teste focado `tests/Feature/KeyControlTest.php` passou com 16 testes e 67 assertions numa base SQLite de teste isolada via DDEV.
 - Corrigido o formulário de professores: Recursos Humanos pode preencher o email na criação, mas continua impedido de o alterar na edição.
+- O `Histórico` passa a abrir por defeito apenas com os movimentos do dia atual; alterar as datas permite consultar outros períodos e `Limpar` repõe o dia atual.
 
 ## Next Safe Action
 
