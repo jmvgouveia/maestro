@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\KeyControlAudit;
 use App\Filament\Pages\KeyControlOperation;
 use App\Filament\Resources\KeyControlResource;
 use App\Filament\Resources\KeyControlResource\Pages\ListKeyControls;
 use App\Filament\Resources\UserBuildingAuthorizationResource;
 use App\Models\Building;
 use App\Models\KeyControl;
+use App\Models\KeyControlEvent;
 use App\Models\KeyControlReportRecipient;
 use App\Models\Room;
 use App\Models\Student;
@@ -19,6 +21,7 @@ use App\Notifications\KeyControlReleasedNotification;
 use App\Services\KeyControlClosureService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
@@ -154,6 +157,46 @@ class KeyControlTest extends TestCase
 
         Livewire::test(ListKeyControls::class)
             ->assertSuccessful();
+    }
+
+    public function test_key_audit_calculates_duration_from_pickup_and_return_events(): void
+    {
+        $porter = $this->porter();
+        $room = $this->room();
+        $teacher = $this->teacher();
+        $keyControl = KeyControl::create([
+            'room_id' => $room->id,
+            'holder_type' => Teacher::class,
+            'holder_id' => $teacher->id,
+            'picked_up_at' => Carbon::parse('2026-09-28 10:00:00'),
+            'returned_at' => Carbon::parse('2026-09-28 11:30:00'),
+            'picked_up_by' => $porter->id,
+            'returned_by' => $porter->id,
+        ]);
+
+        $events = collect([
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::KEY_PICKED_UP,
+                'occurred_at' => Carbon::parse('2026-09-28 10:00:00'),
+            ]),
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::FLOOR_KEY_OPENED,
+                'occurred_at' => Carbon::parse('2026-09-28 10:05:00'),
+            ]),
+            KeyControlEvent::create([
+                'key_control_id' => $keyControl->id,
+                'event_type' => KeyControlEvent::KEY_RETURNED,
+                'occurred_at' => Carbon::parse('2026-09-28 11:30:00'),
+            ]),
+        ]);
+
+        $events->each(function (KeyControlEvent $event) use ($keyControl): void {
+            $event->setRelation('keyControl', $keyControl);
+        });
+
+        $this->assertSame('1h 30m', (new KeyControlAudit)->personDuration($events));
     }
 
     public function test_porter_only_sees_authorized_rooms(): void

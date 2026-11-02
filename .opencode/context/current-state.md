@@ -86,6 +86,10 @@
 - Corrigido o âmbito de `KeyControlResource`: utilizadores com role `Porteiro` mas também com `view-any key control` (Gestão/Admin) deixam de ser filtrados pelos próprios registos; apenas o porteiro operacional sem essa permissão vê os seus movimentos.
 - Refinada a regra após validação em produção: a visibilidade global passa a depender explicitamente das roles `Super Admin`, `Gestão de Chaves`, `Gestão de porteiro` e `Admin Porteiro`, não da permissão `view-any`. Um utilizador com role operacional `Porteiro` vê apenas os próprios registos mesmo que tenha essa permissão atribuída.
 - O item de navegação `Definições` passou a estar visível apenas para `Super Admin`, `Gestão de Chaves`, `Gestão de porteiro` e `Admin Porteiro`; o `Porteiro` não vê o menu e as páginas continuam protegidas por `canAccess()`.
+- O histórico mostra no cabeçalho de cada pessoa o dia, a duração calculada pelos eventos de levantamento/devolução e o número de eventos. O avatar de alunos fica amarelo/laranja, mantendo o avatar azul para professores.
+- Matriz uniformizada: `Porteiro` fica com operação e devoluções; `Gestão de Chaves` fica com consulta/histórico/exportação/mapa; `Admin Porteiro` acrescenta configurações, correções e administração. A migration `2026_09_28_130000_unify_key_control_roles` transfere utilizadores da role legada para `Gestão de Chaves`, regista a transferência para rollback e usa grants aditivos.
+- `Operação` exige `operate key control`; `Mapa de ocupação` foi movido para `Consulta`; `Definições` exige `manage key control administration`. A migration ainda não foi executada em nenhuma BD de produção. O teste focado `tests/Feature/KeyControlTest.php` passou com 16 testes e 67 assertions numa base SQLite de teste isolada via DDEV.
+- Corrigido o formulário de professores: Recursos Humanos pode preencher o email na criação, mas continua impedido de o alterar na edição.
 
 ## Next Safe Action
 

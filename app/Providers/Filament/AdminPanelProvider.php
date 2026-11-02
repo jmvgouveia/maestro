@@ -168,31 +168,30 @@ class AdminPanelProvider extends PanelProvider
                 NavigationItem::make('Operação')
                     ->group('GESTÃO DE CHAVES')
                     ->icon('heroicon-o-key')
+                    ->visible(fn (): bool => auth()->user()?->can('operate key control') ?? false)
                     ->url(fn (): string => KeyControlOperation::getUrl())
                     ->isActiveWhen(fn (): bool => request()->routeIs(
                         'filament.admin.pages.operacao-chaves',
                         'filament.admin.pages.devolucao-chaves-pendentes',
-                        'filament.admin.pages.mapa-ocupacao',
                     ))
                     ->sort(1),
                 NavigationItem::make('Consulta')
                     ->group('GESTÃO DE CHAVES')
                     ->icon('heroicon-o-magnifying-glass')
+                    ->visible(fn (): bool => (auth()->user()?->can('view-any key control')
+                        || auth()->user()?->can('view key control history')
+                        || auth()->user()?->can('view key control occupancy map')) ?? false)
                     ->isActiveWhen(fn (): bool => request()->routeIs(
                         'filament.admin.pages.historico-chaves',
                         'filament.admin.resources.key-controls.*',
+                        'filament.admin.pages.mapa-ocupacao',
                     ))
                     ->url(fn (): string => KeyControlResource::getUrl())
                     ->sort(2),
                 NavigationItem::make('Definições')
                     ->group('GESTÃO DE CHAVES')
                     ->icon('heroicon-o-cog-6-tooth')
-                    ->visible(fn (): bool => auth()->user()?->hasAnyRole([
-                        'Super Admin',
-                        'Gestão de Chaves',
-                        'Gestão de porteiro',
-                        'Admin Porteiro',
-                    ]) ?? false)
+                    ->visible(fn (): bool => auth()->user()?->can('manage key control administration') ?? false)
                     ->url(fn (): string => KeyControlSettings::getUrl())
                     ->isActiveWhen(fn (): bool => request()->routeIs(
                         'filament.admin.pages.definicoes-controlo-chaves',

@@ -39,6 +39,16 @@ Nao delegues por defeito.
 - Se a configuracao estiver em cache, se o ambiente nao estiver comprovadamente isolado ou se existir qualquer risco de atingir producao, para e nao executes o comando.
 - Testes, seeders, migrations e comandos Artisan que acedam a base de dados devem ser tratados como operacoes sensiveis, mesmo quando parecem apenas de leitura ou de desenvolvimento.
 
+## Ambiente local DDEV
+
+- Este projeto usa DDEV; a configuracao esta em `.ddev/config.yaml` com PHP 8.3, Composer 2 e MariaDB local.
+- Preferir `ddev php`, `ddev composer` e `ddev exec` em vez das ferramentas PHP instaladas no host.
+- Antes de testes ou comandos Artisan com base de dados, executar `ddev describe` e confirmar que `web` e `db` estao ativos.
+- Confirmar que o `.env` local aponta para `DB_HOST=db` e para a base local do projeto; nunca assumir que a ligacao esta isolada sem verificar.
+- Testes com `RefreshDatabase`, migrations e comandos destrutivos continuam sujeitos a esta politica e exigem confirmacao explicita do ambiente e do impacto.
+- Nao executar comandos contra a base MariaDB DDEV quando o `.env` estiver configurado para uma base partilhada, staging ou producao.
+- Para validacao sem persistencia, preferir a configuracao de testes com SQLite em memoria quando o framework a disponibilizar.
+
 Resolve diretamente tarefas pequenas, locais e bem definidas.
 
 Usa subagentes apenas quando houver ganho claro em especializacao, independencia, reducao de risco ou reducao de trabalho do agente principal.

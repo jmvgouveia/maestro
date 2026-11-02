@@ -30,8 +30,7 @@ class RoomResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return parent::canViewAny()
-            || (auth()->user()?->can('manage room occupancy settings') ?? false);
+        return auth()->user()?->can('manage room occupancy settings') ?? false;
     }
 
     public static function getModelLabel(): string

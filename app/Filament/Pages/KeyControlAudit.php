@@ -10,6 +10,7 @@ use Filament\Facades\Filament;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Url;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -144,5 +145,64 @@ class KeyControlAudit extends Page
     public function personName(KeyControlEvent $event): string
     {
         return $event->data['occupant_name'] ?? $event->keyControl?->holderDisplayName() ?? 'Desconhecido';
+    }
+
+    public function personIsStudent(KeyControlEvent $event): bool
+    {
+        return ($event->data['occupant_type'] ?? null) === Student::class
+            || $event->keyControl?->holder_type === Student::class;
+    }
+
+    public function personDate(Collection $events): string
+    {
+        return $events->first()?->occurred_at?->format('d/m/Y') ?? '-';
+    }
+
+    public function personDuration(Collection $events): string
+    {
+        $minutes = $events
+            ->groupBy('key_control_id')
+            ->sum(function (Collection $controlEvents): int {
+                $keyControl = $controlEvents->first()->keyControl;
+                $orderedEvents = $controlEvents->sortBy('occurred_at')->values();
+                $minutes = 0;
+                $start = null;
+                $hasDurationEvent = false;
+
+                foreach ($orderedEvents as $event) {
+                    if (in_array($event->event_type, [KeyControlEvent::KEY_PICKED_UP, KeyControlEvent::FLOOR_KEY_OPENED], true)) {
+                        $hasDurationEvent = true;
+                        $start ??= $event->occurred_at;
+
+                        continue;
+                    }
+
+                    if ($start !== null && in_array($event->event_type, [KeyControlEvent::KEY_RETURNED, KeyControlEvent::FLOOR_USE_ENDED], true)) {
+                        $minutes += (int) $start->diffInMinutes($event->occurred_at);
+                        $start = null;
+                    }
+                }
+
+                if ($start !== null) {
+                    $end = now();
+
+                    if ($this->dateUntil !== null) {
+                        $filterEnd = Carbon::parse($this->dateUntil)->endOfDay();
+                        $end = $end->greaterThan($filterEnd) ? $filterEnd : $end;
+                    }
+
+                    $minutes += (int) $start->diffInMinutes($end);
+                }
+
+                if ($hasDurationEvent || $keyControl === null) {
+                    return $minutes;
+                }
+
+                return $keyControl->picked_up_at === null
+                    ? 0
+                    : (int) $keyControl->picked_up_at->diffInMinutes($keyControl->returned_at ?? now());
+            });
+
+        return intdiv($minutes, 60).'h '.($minutes % 60).'m';
     }
 }

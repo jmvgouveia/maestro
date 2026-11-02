@@ -11,7 +11,7 @@ class RoomOccupancyMap extends Page
     protected static string $view = 'filament.pages.room-occupancy-map';
     protected static ?string $slug = 'mapa-ocupacao';
     protected static ?string $navigationGroup = 'GESTÃO DE CHAVES';
-    protected static ?string $navigationParentItem = 'Operação';
+    protected static ?string $navigationParentItem = 'Consulta';
     protected static ?string $navigationLabel = 'Mapa de ocupação';
     protected static ?string $navigationIcon = 'heroicon-o-map';
     protected static ?string $title = 'Mapa de ocupação';
@@ -19,7 +19,8 @@ class RoomOccupancyMap extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->check();
+        return (auth()->user()?->can('view key control occupancy map') ?? false)
+            || (auth()->user()?->can('operate key control') ?? false);
     }
 
     public function getRoomsProperty(): Collection

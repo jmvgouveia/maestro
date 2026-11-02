@@ -78,7 +78,7 @@ class KeyControlOperation extends Page implements HasForms
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->isPorter() ?? false;
+        return auth()->user()?->can('operate key control') ?? false;
     }
 
     public function getRoomsProperty(): Collection
