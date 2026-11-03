@@ -30,6 +30,13 @@ class CreateTeacher extends CreateRecord
         ], [
             'name' => ['required', 'string', 'max:255', 'unique:users,name'],
             'email' => ['required', 'email', 'unique:users,email'],
+        ], [
+            'name.required' => 'O nome do professor é obrigatório.',
+            'name.max' => 'O nome do professor não pode ter mais de :max caracteres.',
+            'name.unique' => 'Já existe um utilizador com este nome.',
+            'email.required' => 'O email do professor é obrigatório.',
+            'email.email' => 'Introduza um endereço de email válido.',
+            'email.unique' => 'Este email já está associado a outro utilizador.',
         ]);
 
         if ($validator->fails()) {
